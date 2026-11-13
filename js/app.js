@@ -279,8 +279,8 @@ function screenMenu() {
       <div class="sprite menu-buddy bob">${monSVG(partnerMon())}</div>
       <p class="subtitle">What do you want to do today?</p>
       <div class="menu-grid">
-        <button class="menu-btn m-math" data-go="home"><span class="icon">🔢</span><span>PokeMath</span><small>Level ${mathLevel()} · ${caughtCount()} Pokémon</small></button>
-        <button class="menu-btn m-read" data-go="reading"><span class="icon">📖</span><span>PokeRead</span><small>${badgeCount()} of 5 badges</small></button>
+        <button class="menu-btn m-math" data-go="home"><span class="icon">🔢</span><span><span class="poke">Poke</span>Math</span><small>Level ${mathLevel()} · ${caughtCount()} Pokémon</small></button>
+        <button class="menu-btn m-read" data-go="reading"><span class="icon">📖</span><span><span class="poke">Poke</span>Read</span><small>${badgeCount()} of ${JOURNEYS.length} badges</small></button>
       </div>
     </div>`);
   $('#settings').addEventListener('click', openSettings);
