@@ -18,10 +18,10 @@ const FINAL_FORMS = new Set([3, 6, 9, 12, 15, 18, 20, 22, 24, 26, 28, 31, 34, 36
 // add/sub: numbers 1..max for + and − (answers never below zero)
 // mul: numbers 1..max for ×
 const MATH_LEVELS = {
-  1: { addSub: 20, mul: 0, label: '+ and − up to 20' },
-  2: { addSub: 20, mul: 5, label: '+ and − up to 20, × up to 5' },
-  3: { addSub: 50, mul: 5, label: '+ and − up to 50, × up to 5' },
-  4: { addSub: 0, mul: 10, label: '× up to 10' },
+  1: { addSub: 10, mul: 0, label: '+ and − with numbers 1 to 10' },
+  2: { addSub: 20, mul: 0, label: '+ and − with numbers 1 to 20' },
+  3: { addSub: 0, mul: 5, label: '× with numbers 1 to 5' },
+  4: { addSub: 0, mul: 10, label: '× with numbers 1 to 10' },
 };
 const LEVEL_POKEMON = {
   // 55: first forms (incl. the four partners) + Ditto
