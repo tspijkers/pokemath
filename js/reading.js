@@ -1,4 +1,5 @@
-// reading.js — Reading journeys: 12 regions × (4 stops of 6 words + a gym with all 24).
+// reading.js — Reading journeys: 12 regions × (4 stops of 6 words + a gym with all 24),
+// plus a 3-round tournament after every 2 badges.
 // Kindergarten words: Dolch pre-primer & primer sight words plus a few picture nouns.
 
 // Maps are drawn in a 240×100 box. Each region's land is shaped like the real place it is based on
@@ -544,7 +545,8 @@ function screenReading(r) {
     return badge ? 'done' : done >= 4 ? 'next' : 'locked';
   };
   const buddyAt = badge ? 4 : Math.min(done, 4);
-  const info = badge ? `🏅 You earned the ${J.badge}! ${r < JOURNEYS.length - 1 ? `Next: ${JOURNEYS[r + 1].name}!` : 'You finished every journey!'}`
+  const tIdx = (r - 1) / 2, tourneyReady = badge && r % 2 === 1 && tourneyOpen(tIdx) && !tourneyState(tIdx).won;
+  const info = tourneyReady ? `🏆 <b>Tournament ${tIdx + 1}</b> is open! Win it for a big prize.` : badge ? `🏅 You earned the ${J.badge}! ${r < JOURNEYS.length - 1 ? `Next: ${JOURNEYS[r + 1].name}!` : 'You finished every journey!'}`
     : done >= 4 ? `Gym Leader ${J.leader} is waiting! Read all ${J.words.length} words to win the ${J.badge}.`
     : `Next stop: <b>${J.stops[done]}</b> — ${STOP_SIZE} new words`;
   show(`
@@ -555,7 +557,9 @@ function screenReading(r) {
         <div class="badge-row">${JOURNEYS.map((j, i) => `<span class="badge-slot${save.reading.badges[i] ? ' got' : ''}">${save.reading.badges[i] ? badgeSVG(j.shape, j.badgeColor) : ''}</span>`).join('')}</div>
       </header>
       <div class="region-tabs">
-        ${JOURNEYS.map((j, i) => `<button class="region-tab${i === r ? ' on' : ''}" data-r="${i}" style="--rc:${j.color}" ${journeyUnlocked(i) ? '' : 'disabled'}>${journeyUnlocked(i) ? '' : '🔒 '}${j.name}</button>`).join('')}
+        ${JOURNEYS.map((j, i) => `<button class="region-tab${i === r ? ' on' : ''}" data-r="${i}" style="--rc:${j.color}" ${journeyUnlocked(i) ? '' : 'disabled'}>${journeyUnlocked(i) ? '' : '🔒 '}${j.name}</button>` +
+          (i % 2 === 1 ? (() => { const t = (i - 1) / 2, open = tourneyOpen(t), won = tourneyState(t).won;
+            return `<button class="region-tab tourney-tab${won ? ' won' : ''}" data-t="${t}" ${open ? '' : 'disabled'}>${open ? (won ? '🏆✅' : '🏆') : '🔒🏆'} Tournament ${t + 1}</button>`; })() : '')).join('')}
       </div>
       <div class="map card" style="--rc:${J.color}">
         ${regionMapSVG(J)}
@@ -569,12 +573,18 @@ function screenReading(r) {
         }).join('')}
         <div class="map-buddy sprite bob" style="left:${pctX(J.nodes[buddyAt][0])}%;top:${J.nodes[buddyAt][1]}%">${heroSVG()}</div>
       </div>
-      ${badge && r === JOURNEYS.length - 1 ? `<div class="map-info card">${info}</div>` : `<button class="map-info card go" id="next-step">${info} <span class="go-arrow">▶</span></button>`}
+      ${badge && r === JOURNEYS.length - 1 && !tourneyReady ? `<div class="map-info card">${info}</div>` : `<button class="map-info card go" id="next-step">${info} <span class="go-arrow">▶</span></button>`}
     </div>`);
-  $('.region-tabs').addEventListener('click', (e) => { const t = e.target.closest('.region-tab'); if (t && !t.disabled) { Sound.tap(); screenReading(+t.dataset.r); } });
+  $('.region-tabs').addEventListener('click', (e) => {
+    const t = e.target.closest('.region-tab');
+    if (!t || t.disabled) return;
+    Sound.tap();
+    if (t.dataset.t !== undefined) screenTournament(+t.dataset.t); else screenReading(+t.dataset.r);
+  });
   $('#next-step')?.addEventListener('click', () => {
     Sound.tap();
-    if (badge) screenReading(r + 1);
+    if (tourneyReady) screenTournament(tIdx);
+    else if (badge) screenReading(r + 1);
     else if (done >= 4) screenGym(r);
     else screenStop(r, done);
   });
@@ -821,4 +831,146 @@ async function screenGym(r) {
       <div class="btn-row"><button class="btn grey" data-go="menu">Home</button><button class="btn green big" id="onward">${first && r < JOURNEYS.length - 1 ? `Go to ${JOURNEYS[r + 1].name} ▶` : 'Back to the map 🗺️'}</button></div>
     </div>`;
   $('#onward').onclick = () => { Sound.tap(); screenReading(first && r < JOURNEYS.length - 1 ? r + 1 : r); };
+  if (r % 2 === 1 && tourneyOpen((r - 1) / 2) && !tourneyState((r - 1) / 2).won) {
+    $('.center-msg .btn-row', panel).insertAdjacentHTML('beforebegin', `<p class="tourney-open">🏆 You have 2 badges. <b>Tournament ${(r - 1) / 2 + 1}</b> is open!</p>`);
+    $('.center-msg .btn-row', panel).insertAdjacentHTML('beforeend', `<button class="btn blue big" id="to-tourney">🏆 Tournament</button>`);
+    $('#to-tourney').onclick = () => { Sound.tap(); screenTournament((r - 1) / 2); };
+  }
+}
+
+// ---------- tournaments: after every 2 badges ----------
+// Quarter final = 1st region's gym leader, semi final = 2nd region's gym leader, final = the champion.
+// Each attack needs 3 reading questions from the 48 words of those two regions.
+const TOURNAMENTS = [
+  { regions: [0, 1], champion: 'Oliver', prize: 145 },          // Zapdos
+  { regions: [2, 3], champion: 'Hayden', prize: 146 },          // Moltres
+  { regions: [4, 5], champion: 'Lob', prize: 144 },             // Articuno
+  { regions: [6, 7], champion: 'Korrina', prize: null },        // prize still to be chosen
+  { regions: [8, 9], champion: 'Tommy The Great', prize: null },
+  { regions: [10, 11], champion: 'Leon', prize: null },
+];
+const ROUND_NAMES = ['Quarter Final', 'Semi Final', 'Final'];
+const TOURNEY_QUESTIONS = 3;
+// Pokémon the gym leaders use, by badge type (from the 151; legendaries excluded).
+const TYPE_TEAMS = {
+  fire: [4, 5, 37, 38, 58, 59, 77, 78, 126, 136], water: [7, 8, 54, 55, 60, 61, 86, 98, 99, 116, 118, 120, 134],
+  electric: [25, 26, 81, 82, 100, 101, 125, 135], rock: [74, 75, 76, 95, 111, 112, 138, 140, 141, 142],
+  psychic: [63, 64, 65, 79, 80, 96, 97, 122], dark: [52, 53, 19, 20, 92, 93], fairy: [35, 36, 39, 40, 113],
+  grass: [1, 2, 43, 44, 69, 70, 102, 114], ice: [87, 91, 124, 131], bug: [10, 12, 13, 15, 46, 48, 49, 123, 127],
+  ghost: [92, 93, 94], fighting: [56, 57, 62, 66, 67, 68, 106, 107],
+};
+const CHAMPION_TEAM = [3, 6, 9, 59, 65, 68, 94, 112, 130, 131, 143, 149];
+
+function tourneyState(t) {
+  const R = ensureReading();
+  if (!R.tournaments) R.tournaments = [];
+  while (R.tournaments.length < TOURNAMENTS.length) R.tournaments.push({ round: 0, won: false });
+  return R.tournaments[t];
+}
+const tourneyOpen = (t) => TOURNAMENTS[t].regions.every((r) => save.reading.badges[r]);
+const tourneyOpponent = (t, round) => {
+  const T = TOURNAMENTS[t];
+  if (round < 2) { const J = JOURNEYS[T.regions[round]]; return { name: J.leader, team: TYPE_TEAMS[J.shape] || CHAMPION_TEAM, color: J.badgeColor }; }
+  return { name: T.champion, team: CHAMPION_TEAM, color: '#f59e0b' };
+};
+const trophySVG = () => `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M30 16 L70 16 L68 44 Q66 60 50 62 Q34 60 32 44 Z" fill="#facc15" ${SK}/><path d="M30 22 Q14 22 16 34 Q18 46 32 44 M70 22 Q86 22 84 34 Q82 46 68 44" fill="none" stroke="${OL}" stroke-width="4"/><rect x="44" y="62" width="12" height="14" fill="#facc15" ${SK}/><rect x="30" y="76" width="40" height="12" rx="2" fill="#a16207" ${SK}/><path d="M50 26 L53 33 L60 33 L54 38 L56 45 L50 41 L44 45 L46 38 L40 33 L47 33 Z" fill="#fff"/></svg>`;
+
+function screenTournament(t) {
+  const T = TOURNAMENTS[t], st = tourneyState(t);
+  const prize = T.prize ? DEX[T.prize] : null;
+  const regionNames = T.regions.map((r) => JOURNEYS[r].name).join(' & ');
+  const rows = ROUND_NAMES.map((rn, i) => {
+    const o = tourneyOpponent(t, i);
+    const state = i < st.round ? 'done' : i === st.round ? 'next' : 'locked';
+    return `<div class="bracket-row ${state}" style="--oc:${o.color}">
+      <div class="bracket-avatar sprite">${trainerSVG(o.name)}</div>
+      <div class="bracket-text"><small>${rn}</small><b>${o.name}</b></div>
+      <div class="bracket-state">${state === 'done' ? '✅' : state === 'next' ? '⚔️' : '🔒'}</div>
+    </div>`;
+  }).join('');
+  show(`
+    <div class="screen tourney">
+      ${readTop(`🏆 Tournament ${t + 1}`)}
+      <div class="split">
+        <div class="card tourney-prize">
+          <p class="kicker">${st.won ? 'You won this prize!' : 'Win the final to earn'}</p>
+          <div class="prize-art${st.won ? '' : ' hidden-prize'}">${prize ? monSVG(prize) : trophySVG()}</div>
+          <h2>${prize ? (st.won ? prize.name : '???') : 'Champion Trophy'}</h2>
+          <p>${prize ? (st.won ? `${prize.name} is on your team at Rank 5!` : 'A Legendary Pokémon!') : 'A shiny champion trophy!'}</p>
+        </div>
+        <div class="card panel tourney-panel">
+          <p class="kicker">Words from ${regionNames}</p>
+          <div class="bracket">${rows}</div>
+          <div class="btn-row"><button class="btn green big" id="start-round">${st.won && st.round === 0 ? 'Play again' : `Start ${ROUND_NAMES[st.round]}`} ⚔️</button></div>
+          <p class="tourney-note">Pick one of your Pokémon for each battle. Every attack needs ${TOURNEY_QUESTIONS} words read correctly!</p>
+        </div>
+      </div>
+    </div>`);
+  $('#start-round').onclick = () => { Sound.tap(); pickFighter(t); };
+}
+
+// Choose one of your Pokémon for the next battle
+async function pickFighter(t) {
+  const st = tourneyState(t);
+  const ids = Object.keys(save.team).map(Number).sort((a, b) => save.team[b].rank - save.team[a].rank || a - b);
+  const choice = await new Promise((resolve) => {
+    const el = document.createElement('div');
+    el.className = 'modal-back';
+    el.innerHTML = `<div class="modal fighter-modal"><h2>Who will battle?</h2><p>${ROUND_NAMES[st.round]} vs ${tourneyOpponent(t, st.round).name}</p>
+      <div class="fighter-grid">${ids.map((id) => `<button class="fighter" data-id="${id}"><div class="sprite">${monSVG(DEX[id])}</div><b>${DEX[id].name}</b><span>${'★'.repeat(save.team[id].rank)}</span></button>`).join('')}</div>
+      <div class="modal-buttons"><button class="btn grey" data-x="1">Cancel</button></div></div>`;
+    document.body.appendChild(el);
+    el.addEventListener('click', (e) => {
+      const f = e.target.closest('.fighter'), x = e.target.closest('[data-x]');
+      if (!f && !x) return;
+      Sound.tap(); el.remove(); resolve(f ? +f.dataset.id : null);
+    });
+  });
+  if (choice) startTourneyBattle(t, choice);
+}
+
+function startTourneyBattle(t, allyId) {
+  const T = TOURNAMENTS[t], st = tourneyState(t), round = st.round;
+  const opp = tourneyOpponent(t, round);
+  const allyRank = save.team[allyId].rank;
+  const rank = Math.min(5, allyRank + (round === 2 ? 1 : 0));
+  const maxHp = 55 + 10 * allyRank + 12 * round + rand(0, 8);
+  const foe = { mon: DEX[pick(opp.team)], level: rank, maxHp, hp: maxHp };
+  const words = T.regions.flatMap((r) => JOURNEYS[r].words);
+  runBattle({
+    mode: 'trainer', trainer: opp.name, foes: [foe], allyId, back: 'reading',
+    title: `🏆 ${ROUND_NAMES[round]}`,
+    ask: (panel, move, tok) => wordQuiz(panel, shuffle(words).slice(0, TOURNEY_QUESTIONS), words, `Read to power up <b>${move.name}</b>!`, tok),
+    onRun: () => screenTournament(t),
+    onWin: (panel, pm) => tourneyRoundWon(t, round, panel, pm),
+  });
+}
+
+function tourneyRoundWon(t, round, panel, pm) {
+  const T = TOURNAMENTS[t], st = tourneyState(t);
+  const opp = tourneyOpponent(t, round);
+  if (round < 2) {
+    st.round = round + 1;
+    persist();
+    panel.innerHTML = `<div class="center-msg"><div class="big-emoji">🎉</div><h2>You beat ${opp.name}!</h2>
+      <p>${pm.name} wins the ${ROUND_NAMES[round]}! Next: the ${ROUND_NAMES[round + 1]}.</p>
+      <div class="btn-row"><button class="btn green big" id="onward">Continue 🏆</button></div></div>`;
+    $('#onward').onclick = () => { Sound.tap(); screenTournament(t); };
+    return;
+  }
+  // won the final
+  const firstWin = !st.won;
+  st.won = true; st.round = 0;
+  const prize = T.prize ? DEX[T.prize] : null;
+  const newPrize = prize && !save.caught[prize.id];
+  if (newPrize) { save.caught[prize.id] = 1; save.team[prize.id] = { rank: 5, rounds: 0 }; }
+  persist();
+  Sound.levelUp(); setTimeout(confetti, 600); setTimeout(confetti, 1400);
+  panel.innerHTML = `<div class="center-msg">
+      <h2>🏆 Tournament ${t + 1} Champion!</h2>
+      <div class="prize-reveal">${prize ? monSVG(prize) : trophySVG()}</div>
+      <p>${newPrize ? `You won the Legendary <b>${prize.name}</b>! It joins your team at Rank 5 ★★★★★` : prize ? `You beat ${opp.name} again. Amazing reading!` : (firstWin ? 'You won the Champion Trophy!' : 'Champion again. Amazing reading!')}</p>
+      <div class="btn-row"><button class="btn grey" data-go="reading">Map 🗺️</button>${newPrize ? `<button class="btn green big" id="use-prize">Use ${prize.name}</button>` : ''}</div>
+    </div>`;
+  $('#use-prize')?.addEventListener('click', () => { Sound.tap(); useMon(prize.id); });
 }
