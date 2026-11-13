@@ -317,6 +317,16 @@ h1, h2, p { margin: 0; }
 .dex-count { background: var(--blue); color: #fff; border-radius: 999px; padding: 1px 8px; }
 .dex-footer { display: flex; justify-content: center; padding: 18px 0 8px; }
 
+/* ---------- team / switching ---------- */
+.switch-btn { align-self: flex-start; font-size: 1.15rem; min-height: 50px; margin-top: 6px; }
+.partner-star { font-size: .7em; }
+.dex-rank { color: #f5b301; font-size: .85rem; letter-spacing: 1px; min-height: 1em; }
+.dex-using { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--green); color: #fff; font-size: .75rem; font-weight: 900; border-radius: 999px; padding: 2px 10px; }
+.dex-cell.have:has(.dex-using) { box-shadow: 0 0 0 4px var(--green), 0 4px 0 rgba(0,0,0,.1); }
+.modal-moves { justify-content: center; }
+.move-chip.locked { background: #e5e7eb; color: var(--grey-d); }
+.modal .stars { font-size: 1.2rem; }
+
 /* ---------- confetti ---------- */
 .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
 .confetti span { position: absolute; top: -20px; width: 12px; height: 18px; border-radius: 3px; animation: fall linear forwards; }
@@ -334,6 +344,7 @@ h1, h2, p { margin: 0; }
   .partner-card { flex-direction: column; text-align: center; }
   .partner-info { align-items: center; }
   .moves, .next { justify-content: center; }
+  .switch-btn { align-self: center; }
 }
 @media (max-width: 520px) {
   .problem { padding: 10px 50px 10px 14px; }
