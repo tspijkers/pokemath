@@ -352,7 +352,8 @@ h1, h2, p { margin: 0; }
 .region-tab { border: none; border-radius: 999px; padding: 10px 20px; font-size: 1.15rem; font-weight: 900; background: rgba(255,255,255,.85); box-shadow: 0 3px 0 rgba(0,0,0,.12); }
 .region-tab.on { background: var(--rc); color: #fff; }
 .region-tab[disabled] { opacity: .5; }
-.map { position: relative; flex: 1; min-height: 380px; overflow: hidden; background: radial-gradient(circle at 30% 20%, var(--m1), var(--m2)); }
+.map { position: relative; width: 100%; aspect-ratio: 12 / 5; max-height: 62vh; overflow: hidden; background: #7cc4f2; }
+.map-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .map-path { position: absolute; inset: 0; width: 100%; height: 100%; }
 .map-path path { fill: none; stroke: #fff8e7; stroke-width: 22; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 3px 0 rgba(0,0,0,.12)); }
 .map-decor { position: absolute; font-size: 2rem; transform: translate(-50%, -50%); opacity: .85; pointer-events: none; }
@@ -413,7 +414,9 @@ h1, h2, p { margin: 0; }
 @media (max-aspect-ratio: 1/1), (max-width: 760px) {
   .menu-grid { grid-template-columns: 1fr; }
   .menu-btn { min-height: 150px; }
-  .map { min-height: 46vh; }
+  .node-label { font-size: .8rem; }
+  .map-buddy { width: 72px; height: 72px; }
+  .map-decor { font-size: 1.4rem; }
   .node-icon { width: 62px; height: 62px; }
   .map-node.gym .node-icon { width: 78px; height: 78px; }
   .gym-leader { width: 180px; }
