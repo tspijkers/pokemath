@@ -1,65 +1,137 @@
-// reading.js — Reading journeys: 5 regions × (4 stops of 5 words + a gym with all 20).
+// reading.js — Reading journeys: 10 regions × (4 stops of 6 words + a gym with all 24).
 // Kindergarten words: Dolch pre-primer & primer sight words plus a few picture nouns.
 
 // Maps are drawn in a 240×100 box. Each region's land is shaped like the real place it is based on
-// (simplified): Kanto = Kantō, Johto = Kansai, Hoenn = Kyūshū, Sinnoh = Hokkaidō, Kalos = France.
+// (simplified): Kanto = Kantō, Johto = Kansai, Hoenn = Kyūshū, Sinnoh = Hokkaidō, Kalos = France,
+// Unova = New York, Alola = Hawaiʻi, Galar = Great Britain, Paldea = Iberia, Hisui = old Hokkaidō.
+// Each region: 12 CVC words + 12 sight words. Stops get 3 of each (6 words); the gym tests all 24.
+const HOKKAIDO = [[140, 4], [152, 10], [168, 22], [186, 32], [204, 22], [200, 36], [212, 46], [222, 50], [210, 56], [190, 58], [172, 66], [156, 82], [148, 74], [136, 62], [124, 64], [112, 74], [104, 88], [94, 96], [88, 86], [98, 72], [104, 58], [98, 46], [108, 40], [120, 30], [130, 14]];
 const JOURNEYS = [
   {
     name: 'Kanto', color: '#22c55e', land: '#a6e08f', decor: '🌳', leader: 'Uncle Kev',
     badge: 'Fire Badge', shape: 'fire', badgeColor: '#f97316',
     stops: ['Sunny Path', 'Berry Woods', 'Pebble Bridge', 'Windy Hill'],
     outline: [[40, 12], [90, 6], [150, 8], [196, 10], [206, 30], [204, 46], [214, 60], [204, 66], [196, 80], [186, 92], [170, 96], [164, 84], [160, 70], [150, 62], [140, 64], [138, 76], [130, 90], [124, 80], [114, 80], [100, 80], [88, 78], [86, 92], [80, 98], [70, 94], [72, 80], [56, 74], [40, 68], [30, 50], [32, 28]],
-    islands: [],
-    lakes: [],
+    islands: [], lakes: [],
     nodes: [[56, 46], [94, 28], [132, 40], [176, 30], [184, 76]],
     decorAt: [[44, 26], [70, 60], [118, 20], [160, 22], [150, 50], [196, 52], [110, 62]],
-    words: ['cat', 'bat', 'hat', 'mat', 'sat', 'tap', 'cap', 'map', 'nap', 'fan', 'can', 'pan', 'man', 'van', 'ran', 'bag', 'tag', 'wag', 'jam', 'dam'],
+    cvc: ['cat', 'bat', 'hat', 'mat', 'cap', 'map', 'nap', 'fan', 'can', 'pan', 'van', 'bag'],
+    sight: ['I', 'a', 'the', 'see', 'go', 'is', 'it', 'up', 'my', 'me', 'we', 'to'],
   },
   {
     name: 'Johto', color: '#f97316', land: '#f4c98a', decor: '🍁', leader: 'Aunt Carina',
     badge: 'Water Badge', shape: 'water', badgeColor: '#0ea5e9',
     stops: ['Maple Trail', 'Lantern Lane', 'Lake Shore', 'Old Bridge'],
     outline: [[58, 14], [96, 8], [130, 12], [170, 6], [184, 20], [180, 42], [174, 58], [168, 72], [156, 86], [140, 96], [128, 88], [118, 74], [112, 60], [104, 52], [92, 50], [78, 48], [62, 46], [52, 32]],
-    islands: [[[98, 62], [106, 58], [108, 70], [100, 74]]],
-    lakes: [[150, 32, 6, 12]],
+    islands: [[[98, 62], [106, 58], [108, 70], [100, 74]]], lakes: [[150, 32, 6, 12]],
     nodes: [[70, 30], [104, 24], [128, 44], [166, 50], [148, 78]],
     decorAt: [[62, 20], [86, 40], [120, 18], [168, 22], [140, 60], [160, 64], [116, 34]],
-    words: ['bed', 'red', 'fed', 'led', 'leg', 'peg', 'beg', 'wet', 'net', 'pet', 'set', 'met', 'get', 'jet', 'let', 'pen', 'hen', 'ten', 'men', 'den'],
+    cvc: ['bed', 'red', 'leg', 'peg', 'net', 'pet', 'jet', 'wet', 'pen', 'hen', 'ten', 'men'],
+    sight: ['and', 'you', 'in', 'look', 'here', 'said', 'play', 'like', 'jump', 'help', 'come', 'one'],
   },
   {
     name: 'Hoenn', color: '#0ea5e9', land: '#b7e889', decor: '🌴', leader: 'Uncle Dreis',
     badge: 'Electric Badge', shape: 'electric', badgeColor: '#eab308',
     stops: ['Sandy Beach', 'Palm Grove', 'Coral Bay', 'Volcano Trail'],
     outline: [[96, 10], [116, 4], [140, 8], [152, 20], [158, 40], [158, 60], [150, 80], [140, 94], [132, 84], [130, 76], [124, 84], [120, 96], [108, 86], [106, 66], [96, 62], [86, 58], [78, 48], [88, 40], [82, 26], [90, 20]],
-    islands: [[[170, 86], [178, 82], [182, 90], [174, 94]], [[60, 30], [66, 26], [70, 34], [62, 38]]],
-    lakes: [],
+    islands: [[[170, 86], [178, 82], [182, 90], [174, 94]], [[60, 30], [66, 26], [70, 34], [62, 38]]], lakes: [],
     nodes: [[100, 24], [134, 18], [148, 46], [118, 54], [140, 70]],
     decorAt: [[118, 14], [92, 48], [146, 30], [130, 40], [112, 72], [150, 62], [104, 34]],
-    words: ['bit', 'hit', 'fit', 'sit', 'pit', 'lit', 'pin', 'win', 'bin', 'din', 'fin', 'tin', 'zip', 'tip', 'lip', 'rip', 'hip', 'nip', 'gig', 'wig'],
+    cvc: ['sit', 'lit', 'pin', 'win', 'bin', 'fin', 'zip', 'lip', 'rip', 'wig', 'hit', 'tip'],
+    sight: ['two', 'three', 'down', 'find', 'for', 'funny', 'little', 'make', 'where', 'yellow', 'blue', 'away'],
   },
   {
     name: 'Sinnoh', color: '#6366f1', land: '#eef2f8', decor: '🌲', leader: 'Aunt Mary Claire',
     badge: 'Rock Badge', shape: 'rock', badgeColor: '#a8956a',
     stops: ['Snowy Path', 'Pine Forest', 'Frozen Lake', 'Crystal Cave'],
-    outline: [[140, 4], [152, 10], [168, 22], [186, 32], [204, 22], [200, 36], [212, 46], [222, 50], [210, 56], [190, 58], [172, 66], [156, 82], [148, 74], [136, 62], [124, 64], [112, 74], [104, 88], [94, 96], [88, 86], [98, 72], [104, 58], [98, 46], [108, 40], [120, 30], [130, 14]],
-    islands: [],
-    lakes: [],
+    outline: HOKKAIDO, islands: [], lakes: [],
     nodes: [[114, 48], [140, 24], [168, 38], [196, 48], [152, 62]],
     decorAt: [[128, 34], [150, 44], [180, 46], [136, 54], [104, 78], [160, 28], [120, 60]],
-    words: ['hop', 'pot', 'hot', 'rot', 'not', 'dot', 'got', 'cot', 'top', 'mop', 'pop', 'log', 'dog', 'fog', 'jog', 'cob', 'rob', 'sob', 'bob', 'mob'],
+    cvc: ['hop', 'pot', 'hot', 'dot', 'top', 'mop', 'pop', 'log', 'dog', 'fog', 'cob', 'sob'],
+    sight: ['he', 'she', 'was', 'are', 'all', 'at', 'be', 'do', 'eat', 'have', 'they', 'this'],
   },
   {
     name: 'Kalos', color: '#ec4899', land: '#cdeaa6', decor: '🌸', leader: 'Aunt Olivia',
     badge: 'Psychic Badge', shape: 'psychic', badgeColor: '#a855f7',
     stops: ['Flower Field', 'Castle Road', 'Rainbow Bridge', 'Starry Hill'],
     outline: [[118, 4], [134, 10], [152, 18], [168, 26], [162, 40], [160, 52], [168, 68], [158, 84], [140, 82], [130, 88], [118, 94], [100, 90], [102, 74], [100, 62], [92, 50], [78, 44], [64, 40], [70, 32], [88, 30], [96, 22], [106, 18]],
-    islands: [[[178, 78], [184, 76], [186, 90], [180, 94]]],
-    lakes: [],
+    islands: [[[178, 78], [184, 76], [186, 90], [180, 94]]], lakes: [],
     nodes: [[76, 38], [110, 26], [140, 34], [126, 60], [148, 74]],
     decorAt: [[124, 16], [96, 40], [150, 50], [112, 76], [134, 46], [90, 60], [156, 30]],
-    words: ['bug', 'hug', 'mug', 'jug', 'rug', 'run', 'fun', 'bun', 'sun', 'cup', 'tub', 'hub', 'nut', 'hut', 'mut', 'cut', 'bus', 'gum', 'hum', 'mud'],
+    cvc: ['bug', 'hug', 'mug', 'rug', 'bun', 'sun', 'cup', 'tub', 'nut', 'hut', 'bus', 'gum'],
+    sight: ['what', 'on', 'no', 'now', 'out', 'so', 'saw', 'say', 'too', 'who', 'will', 'with'],
+  },
+  {
+    name: 'Unova', color: '#475569', land: '#d6dbe3', decor: '🏙️', leader: 'Uncle Jason',
+    badge: 'Dark Badge', shape: 'dark', badgeColor: '#374151',
+    stops: ['City Park', 'Harbor Pier', 'Skyline Bridge', 'Night Market'],
+    outline: [[-4, -4], [244, -4], [244, 30], [212, 36], [176, 38], [146, 40], [128, 44], [116, 40], [108, 50], [94, 54], [84, 62], [68, 70], [46, 76], [24, 84], [-4, 92]],
+    islands: [
+      [[104, 44], [112, 46], [104, 72], [96, 76], [94, 68]],
+      [[122, 60], [150, 52], [196, 48], [236, 44], [238, 52], [204, 62], [164, 70], [128, 74], [118, 68]],
+      [[62, 84], [74, 80], [78, 90], [68, 96]],
+    ],
+    lakes: [],
+    nodes: [[40, 44], [102, 58], [150, 62], [206, 54], [150, 20]],
+    decorAt: [[22, 22], [70, 30], [196, 18], [228, 20], [180, 58], [120, 24], [30, 62]],
+    cvc: ['rat', 'ham', 'jam', 'dad', 'sad', 'tag', 'wag', 'lap', 'ram', 'wax', 'tap', 'man'],
+    sight: ['am', 'ate', 'black', 'brown', 'but', 'came', 'did', 'four', 'good', 'into', 'must', 'new'],
+  },
+  {
+    name: 'Alola', color: '#f43f5e', land: '#b8e986', decor: '🌺', leader: 'Uncle Eddy',
+    badge: 'Fairy Badge', shape: 'fairy', badgeColor: '#f472b6',
+    stops: ['Coral Beach', 'Volcano Path', 'Flower Garden', 'Rainbow Lagoon'],
+    outline: [[182, 58], [206, 50], [228, 60], [224, 84], [202, 94], [184, 84]],
+    islands: [
+      [[18, 42], [38, 30], [56, 36], [58, 52], [44, 62], [24, 58]],
+      [[76, 52], [96, 44], [114, 50], [108, 64], [88, 68]],
+      [[128, 30], [156, 22], [178, 32], [172, 50], [148, 56], [132, 48]],
+    ],
+    lakes: [],
+    nodes: [[38, 46], [96, 56], [142, 40], [166, 40], [204, 72]],
+    decorAt: [[28, 50], [50, 44], [104, 56], [158, 46], [140, 30], [196, 62], [214, 80]],
+    cvc: ['web', 'vet', 'gem', 'den', 'fed', 'beg', 'set', 'let', 'met', 'get', 'led', 'yes'],
+    sight: ['our', 'please', 'pretty', 'ride', 'soon', 'that', 'there', 'under', 'want', 'well', 'went', 'white'],
+  },
+  {
+    name: 'Galar', color: '#16a34a', land: '#b5df9a', decor: '🏰', leader: 'Aunt Desiree',
+    badge: 'Grass Badge', shape: 'grass', badgeColor: '#22c55e',
+    stops: ['Castle Gate', 'Green Meadow', 'Misty Moor', 'Highland Pass'],
+    outline: [[120, 2], [138, 8], [146, 20], [140, 32], [146, 46], [150, 56], [162, 66], [154, 76], [158, 84], [150, 90], [120, 92], [100, 94], [86, 96], [96, 84], [108, 78], [102, 72], [90, 68], [94, 58], [104, 52], [110, 42], [98, 30], [108, 24], [100, 16], [104, 6]],
+    islands: [[[56, 40], [76, 34], [84, 50], [78, 66], [60, 70], [50, 56]]],
+    lakes: [],
+    nodes: [[112, 86], [136, 72], [124, 56], [126, 36], [122, 12]],
+    decorAt: [[118, 26], [134, 18], [108, 66], [144, 60], [128, 80], [66, 52], [100, 88]],
+    cvc: ['pig', 'big', 'dig', 'kid', 'lid', 'bib', 'rib', 'six', 'mix', 'fix', 'him', 'kit'],
+    sight: ['after', 'again', 'an', 'any', 'as', 'ask', 'by', 'fly', 'from', 'give', 'going', 'had'],
+  },
+  {
+    name: 'Paldea', color: '#d97706', land: '#f2d98b', decor: '🌻', leader: 'Uncle Jimmy',
+    badge: 'Ice Badge', shape: 'ice', badgeColor: '#38bdf8',
+    stops: ['Olive Grove', 'Sunny Plaza', 'Windmill Hill', 'Desert Road'],
+    outline: [[64, 12], [92, 8], [150, 8], [172, 18], [178, 30], [166, 48], [170, 62], [156, 76], [140, 86], [114, 92], [96, 88], [86, 76], [82, 58], [78, 40], [70, 26]],
+    islands: [[[192, 48], [204, 44], [206, 52], [196, 56]]],
+    lakes: [],
+    nodes: [[90, 30], [126, 22], [158, 34], [128, 60], [108, 80]],
+    decorAt: [[110, 16], [146, 22], [100, 52], [150, 60], [124, 78], [88, 66], [140, 44]],
+    cvc: ['fox', 'box', 'jog', 'rod', 'nod', 'cot', 'got', 'not', 'rob', 'lot', 'hog', 'cop'],
+    sight: ['has', 'her', 'his', 'how', 'just', 'know', 'live', 'may', 'of', 'old', 'once', 'open'],
+  },
+  {
+    name: 'Hisui', color: '#7c3aed', land: '#d9e6c8', decor: '🌾', leader: 'Aunt Nini',
+    badge: 'Bug Badge', shape: 'bug', badgeColor: '#84cc16',
+    stops: ['Old Village', 'Bamboo Path', 'Snowy Peak', 'Ancient Ruins'],
+    outline: HOKKAIDO, islands: [], lakes: [],
+    nodes: [[100, 82], [112, 50], [140, 24], [172, 40], [200, 50]],
+    decorAt: [[128, 34], [150, 44], [180, 46], [136, 54], [104, 66], [160, 28], [120, 60]],
+    cvc: ['pup', 'cub', 'rub', 'tug', 'cut', 'mud', 'jug', 'run', 'fun', 'hum', 'sub', 'dug'],
+    sight: ['over', 'put', 'some', 'stop', 'take', 'thank', 'them', 'then', 'walk', 'were', 'when', 'think'],
   },
 ];
+// Stop i gets CVC words 3i..3i+2 and sight words 3i..3i+2; the gym uses all 24.
+JOURNEYS.forEach((J) => { J.words = [0, 1, 2, 3].flatMap((i) => [...J.cvc.slice(i * 3, i * 3 + 3), ...J.sight.slice(i * 3, i * 3 + 3)]); });
+const STOP_SIZE = 6;
+
 // Pictures that could be mixed up are never shown together.
 const PIC_CONFLICTS = [['mat', 'rug'], ['cup', 'mug'], ['cup', 'jug'], ['mug', 'jug'], ['van', 'bus'], ['cap', 'hat'], ['nap', 'bed'], ['pot', 'pan'], ['win', 'cup'], ['win', 'mug'], ['can', 'jam']];
 
@@ -231,6 +303,95 @@ const PIC = {
     <ellipse cx="40" cy="68" rx="8" ry="3" fill="#a16207"/><ellipse cx="64" cy="66" rx="6" ry="2.5" fill="#a16207"/>
     <circle cx="26" cy="40" r="5" fill="#78350f" ${SK}/><circle cx="74" cy="34" r="6" fill="#78350f" ${SK}/><circle cx="54" cy="30" r="4" fill="#78350f" ${SK}/>`,
 };
+
+// ---- more pictures: new CVC words and drawable sight words ----
+const splash = (col) => {
+  let s = '';
+  for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2; s += `<circle cx="${(50 + Math.cos(a) * 28).toFixed(1)}" cy="${(52 + Math.sin(a) * 28).toFixed(1)}" r="${9 + (i % 3) * 2}" fill="${col}" ${SK}/>`; }
+  return s + `<circle cx="50" cy="52" r="30" fill="${col}" ${SK}/><circle cx="40" cy="42" r="6" fill="#fff" opacity=".35"/>`;
+};
+const countDots = (n) => {
+  const layouts = { 1: [[50, 50]], 2: [[32, 50], [68, 50]], 3: [[22, 50], [50, 50], [78, 50]], 4: [[34, 34], [66, 34], [34, 66], [66, 66]], 6: [[24, 34], [50, 34], [76, 34], [24, 66], [50, 66], [76, 66]] };
+  return layouts[n].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="11" fill="#a855f7" ${SK}/>`).join('');
+};
+Object.assign(PIC, {
+  // Unova
+  rat: `<path d="M74 66 Q96 70 92 50 Q90 40 82 44" fill="none" stroke="#f9a8d4" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="54" cy="62" rx="24" ry="16" fill="#9ca3af" ${SK}/><path d="M34 60 L12 66 L32 52 Z" fill="#9ca3af" ${SK}/>
+    <circle cx="36" cy="46" r="8" fill="#9ca3af" ${SK}/><circle cx="36" cy="46" r="4" fill="#f9a8d4"/><circle cx="26" cy="58" r="2.5" fill="${OL}"/><circle cx="12" cy="66" r="3" fill="#f9a8d4"/>
+    <path d="M46 76 L44 84 M62 76 L64 84" stroke="${OL}" stroke-width="3" stroke-linecap="round"/>`,
+  ham: `<path d="M30 30 Q60 10 82 34 Q96 56 74 72 Q52 86 34 70 Q18 54 30 30 Z" fill="#f9a8b4" ${SK}/><path d="M38 38 Q60 26 74 40 Q82 54 70 62" fill="none" stroke="#fda4af" stroke-width="6"/>
+    <path d="M34 70 L18 86" stroke="${OL}" stroke-width="12" stroke-linecap="round"/><path d="M34 70 L18 86" stroke="#fff7ed" stroke-width="7" stroke-linecap="round"/><circle cx="14" cy="88" r="6" fill="#fff7ed" ${SK}/><circle cx="20" cy="92" r="5" fill="#fff7ed" ${SK}/>`,
+  ram: `${[[30, 50], [44, 40], [60, 40], [74, 50], [66, 64], [38, 64], [52, 66]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="13" fill="#f5f5f4" ${SK}/>`).join('')}
+    <ellipse cx="52" cy="52" rx="16" ry="18" fill="#57534e" ${SK}/><circle cx="46" cy="48" r="2.5" fill="#fff"/><circle cx="58" cy="48" r="2.5" fill="#fff"/>
+    <path d="M38 40 Q24 30 26 46 Q28 56 36 50" fill="none" stroke="#d6a46a" stroke-width="7" stroke-linecap="round"/><path d="M66 40 Q80 30 78 46 Q76 56 68 50" fill="none" stroke="#d6a46a" stroke-width="7" stroke-linecap="round"/>
+    <path d="M42 80 L42 90 M62 80 L62 90" stroke="${OL}" stroke-width="5" stroke-linecap="round"/>`,
+  // Alola
+  web: `${[0, 45, 90, 135].map((a) => `<path d="M${(50 + Math.cos(a * Math.PI / 180) * 44).toFixed(1)} ${(50 + Math.sin(a * Math.PI / 180) * 44).toFixed(1)} L${(50 - Math.cos(a * Math.PI / 180) * 44).toFixed(1)} ${(50 - Math.sin(a * Math.PI / 180) * 44).toFixed(1)}" stroke="#64748b" stroke-width="2"/>`).join('')}
+    ${[12, 24, 36].map((r) => `<polygon points="${[...Array(8)].map((_, i) => `${(50 + Math.cos(i * Math.PI / 4) * r).toFixed(1)},${(50 + Math.sin(i * Math.PI / 4) * r).toFixed(1)}`).join(' ')}" fill="none" stroke="#64748b" stroke-width="2"/>`).join('')}
+    <path d="M70 16 L70 30" stroke="${OL}" stroke-width="1.5"/><circle cx="70" cy="34" r="6" fill="${OL}"/>`,
+  gem: `<path d="M24 36 L38 18 L62 18 L76 36 L50 86 Z" fill="#22d3ee" ${SK}/><path d="M24 36 L76 36 M38 18 L44 36 L50 86 L56 36 L62 18" fill="none" ${SK}/><path d="M30 34 L38 22" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`,
+  yes: `<circle cx="50" cy="50" r="38" fill="#22c55e" ${SK}/><path d="M30 52 L44 66 L72 36" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>`,
+  // Galar
+  pig: `<path d="M24 30 L30 14 L42 26 Z M76 30 L70 14 L58 26 Z" fill="#f9a8d4" ${SK}/><circle cx="50" cy="52" r="32" fill="#f9a8d4" ${SK}/>
+    <ellipse cx="50" cy="62" rx="14" ry="10" fill="#f472b6" ${SK}/><ellipse cx="45" cy="62" rx="2.5" ry="4" fill="${OL}"/><ellipse cx="55" cy="62" rx="2.5" ry="4" fill="${OL}"/>
+    <circle cx="38" cy="44" r="3.5" fill="${OL}"/><circle cx="62" cy="44" r="3.5" fill="${OL}"/>`,
+  big: `<ellipse cx="58" cy="56" rx="30" ry="22" fill="#a8b0c0" ${SK}/>${[38, 50, 66, 78].map((x) => `<rect x="${x - 5}" y="66" width="10" height="20" rx="3" fill="#a8b0c0" ${SK}/>`).join('')}
+    <path d="M22 50 Q8 62 14 82" fill="none" stroke="${OL}" stroke-width="12" stroke-linecap="round"/><path d="M22 50 Q8 62 14 82" fill="none" stroke="#a8b0c0" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="28" cy="42" r="16" fill="#a8b0c0" ${SK}/><ellipse cx="38" cy="42" rx="9" ry="13" fill="#c8cfdc" ${SK}/><circle cx="24" cy="38" r="2.5" fill="${OL}"/>`,
+  dig: `<path d="M8 90 Q30 66 52 74 Q74 62 92 90 Z" fill="#a16207" ${SK}/><path d="M74 8 L50 64" stroke="${OL}" stroke-width="8" stroke-linecap="round"/><path d="M74 8 L50 64" stroke="#c08a4a" stroke-width="4" stroke-linecap="round"/>
+    <rect x="66" y="4" width="18" height="6" rx="3" fill="#c08a4a" ${SK}/><path d="M42 58 Q40 76 50 80 Q62 78 60 62 Z" fill="#94a3b8" ${SK}/><circle cx="72" cy="70" r="4" fill="#78350f"/><circle cx="30" cy="74" r="3" fill="#78350f"/>`,
+  kid: person(50, 0.7, '#f97316'),
+  bib: `<path d="M30 20 Q50 34 70 20 L76 30 Q80 80 50 88 Q20 80 24 30 Z" fill="#fff" ${SK}/><path d="M38 24 Q50 30 62 24" fill="none" stroke="#38bdf8" stroke-width="4"/>
+    <circle cx="50" cy="58" r="12" fill="#fde047" ${SK}/><circle cx="46" cy="56" r="1.8" fill="${OL}"/><circle cx="54" cy="56" r="1.8" fill="${OL}"/><path d="M45 62 Q50 66 55 62" fill="none" stroke="${OL}" stroke-width="2"/>`,
+  six: countDots(6),
+  mix: `<path d="M14 50 L86 50 Q84 86 50 86 Q16 86 14 50 Z" fill="#fde68a" ${SK}/><ellipse cx="50" cy="50" rx="36" ry="8" fill="#fef3c7" ${SK}/>
+    <path d="M38 50 Q50 42 62 50 Q50 58 38 50" fill="none" stroke="#d97706" stroke-width="3"/>
+    <path d="M60 46 L80 10" stroke="${OL}" stroke-width="5" stroke-linecap="round"/><ellipse cx="58" cy="46" rx="6" ry="10" fill="none" stroke="#64748b" stroke-width="3" transform="rotate(30 58 46)"/>
+    <path d="M22 30 q4 -6 8 0 M84 34 q4 -6 8 0" fill="none" stroke="#9ca3af" stroke-width="3" stroke-linecap="round"/>`,
+  fix: `<path d="M22 80 L64 38" stroke="${OL}" stroke-width="10" stroke-linecap="round"/><path d="M22 80 L64 38" stroke="#c08a4a" stroke-width="6" stroke-linecap="round"/><rect x="54" y="18" width="34" height="16" rx="3" fill="#64748b" ${SK} transform="rotate(45 71 26)"/>
+    <path d="M78 80 L40 42" stroke="${OL}" stroke-width="10" stroke-linecap="round"/><path d="M78 80 L40 42" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round"/><circle cx="34" cy="36" r="11" fill="#cbd5e1" ${SK}/><path d="M28 28 L36 36" stroke="#fff" stroke-width="5"/>`,
+  // Paldea
+  fox: `<path d="M18 22 L36 40 L28 50 Z M82 22 L64 40 L72 50 Z" fill="#f97316" ${SK}/>
+    <path d="M22 40 Q50 24 78 40 L66 70 Q50 86 34 70 Z" fill="#f97316" ${SK}/><path d="M34 62 Q50 92 66 62 Q58 70 50 70 Q42 70 34 62 Z" fill="#fff" ${SK}/>
+    <circle cx="40" cy="50" r="3.5" fill="${OL}"/><circle cx="60" cy="50" r="3.5" fill="${OL}"/><ellipse cx="50" cy="76" rx="4" ry="3" fill="${OL}"/>`,
+  box: `<path d="M14 36 L50 24 L86 36 L50 48 Z" fill="#e8c38a" ${SK}/><path d="M14 36 L50 48 L50 90 L14 78 Z" fill="#d6a46a" ${SK}/><path d="M86 36 L50 48 L50 90 L86 78 Z" fill="#c08a4a" ${SK}/>
+    <path d="M32 30 L68 42" stroke="#fef3c7" stroke-width="6"/>`,
+  rod: `<path d="M10 90 L78 14" stroke="${OL}" stroke-width="7" stroke-linecap="round"/><path d="M10 90 L78 14" stroke="#c08a4a" stroke-width="3.5" stroke-linecap="round"/><circle cx="24" cy="76" r="6" fill="#64748b" ${SK}/>
+    <path d="M78 14 Q88 40 84 66" fill="none" stroke="#64748b" stroke-width="1.5"/><circle cx="84" cy="62" r="5" fill="#ef4444" ${SK}/><path d="M84 68 L84 80 Q84 86 78 84" fill="none" stroke="${OL}" stroke-width="2.5"/>
+    <path d="M60 80 Q72 74 92 80" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>`,
+  // Hisui
+  pup: `<ellipse cx="54" cy="70" rx="22" ry="16" fill="#e7c9a0" ${SK}/><ellipse cx="22" cy="40" rx="7" ry="13" fill="#a16207" ${SK}/><ellipse cx="54" cy="40" rx="7" ry="13" fill="#a16207" ${SK}/>
+    <circle cx="38" cy="44" r="18" fill="#e7c9a0" ${SK}/><ellipse cx="38" cy="52" rx="9" ry="6" fill="#fff6e8" ${SK}/><ellipse cx="38" cy="49" rx="3.5" ry="2.5" fill="${OL}"/>
+    <circle cx="32" cy="40" r="2.5" fill="${OL}"/><circle cx="44" cy="40" r="2.5" fill="${OL}"/><path d="M74 66 Q86 56 82 48" fill="none" stroke="${OL}" stroke-width="5" stroke-linecap="round"/>`,
+  cub: `<circle cx="28" cy="28" r="11" fill="#92400e" ${SK}/><circle cx="72" cy="28" r="11" fill="#92400e" ${SK}/><circle cx="50" cy="54" r="32" fill="#92400e" ${SK}/>
+    <ellipse cx="50" cy="66" rx="14" ry="10" fill="#d6a46a" ${SK}/><ellipse cx="50" cy="61" rx="5" ry="3.5" fill="${OL}"/><circle cx="38" cy="46" r="3.5" fill="${OL}"/><circle cx="62" cy="46" r="3.5" fill="${OL}"/>`,
+  sub: `<rect x="0" y="0" width="100" height="100" fill="#bae6fd"/><ellipse cx="50" cy="60" rx="40" ry="18" fill="#facc15" ${SK}/><rect x="42" y="30" width="20" height="16" rx="3" fill="#facc15" ${SK}/>
+    <path d="M52 30 L52 18 L60 18" fill="none" stroke="${OL}" stroke-width="3"/>${[30, 50, 70].map((x) => `<circle cx="${x}" cy="60" r="6" fill="#dff3ff" ${SK}/>`).join('')}
+    <path d="M90 52 L98 44 L98 76 L90 68" fill="#facc15" ${SK}/><circle cx="20" cy="26" r="3" fill="#fff" ${SK}/><circle cx="26" cy="16" r="2" fill="#fff" ${SK}/>`,
+  // drawable sight words
+  blue: splash('#3b82f6'), yellow: splash('#facc15'), black: splash('#222233'), brown: splash('#8b5a2b'), white: splash('#ffffff'),
+  one: countDots(1), two: countDots(2), three: countDots(3), four: countDots(4),
+  down: `<path d="M50 90 L82 54 L63 54 L63 10 L37 10 L37 54 L18 54 Z" fill="#22c55e" ${SK}/>`,
+  up: `<path d="M50 10 L82 46 L63 46 L63 90 L37 90 L37 46 L18 46 Z" fill="#22c55e" ${SK}/>`,
+  jump: `${kidHead(50, 18)}<path d="M50 27 L50 52 M50 33 L34 18 M50 33 L66 18 M50 52 L40 62 L44 72 M50 52 L60 62 L56 72" ${LIMB}/>
+    <path d="M14 92 L86 92" stroke="#b5c4a0" stroke-width="4" stroke-linecap="round"/><path d="M38 80 L36 86 M50 80 L50 87 M62 80 L64 86" stroke="#9ca3af" stroke-width="3" stroke-linecap="round"/>`,
+  ride: `<circle cx="26" cy="72" r="15" fill="none" stroke="${OL}" stroke-width="4"/><circle cx="74" cy="72" r="15" fill="none" stroke="${OL}" stroke-width="4"/>
+    <path d="M26 72 L44 50 L66 50 L74 72 M44 50 L52 72 L66 50 M64 50 L62 40 L70 40" fill="none" stroke="#14b8a6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    ${kidHead(46, 16)}<path d="M46 25 L44 46 M45 32 L64 40 M44 46 L54 60 L52 72" ${LIMB}/>`,
+  eat: `<path d="M44 20 Q48 26 44 32 M56 20 Q60 26 56 32" fill="none" stroke="#9ca3af" stroke-width="3" stroke-linecap="round"/>
+    <path d="M14 50 L86 50 Q84 84 50 84 Q16 84 14 50 Z" fill="#14b8a6" ${SK}/><path d="M18 50 Q30 40 42 48 Q54 38 66 48 Q76 40 82 50 Z" fill="#fca5a5" ${SK}/>
+    <path d="M72 18 L60 44" stroke="${OL}" stroke-width="8" stroke-linecap="round"/><path d="M72 18 L60 44" stroke="#d1d5db" stroke-width="4" stroke-linecap="round"/>`,
+  under: `<rect x="14" y="30" width="72" height="9" rx="2" fill="#c08a4a" ${SK}/><path d="M20 39 L20 86 M80 39 L80 86" stroke="${OL}" stroke-width="8" stroke-linecap="round"/><path d="M20 39 L20 86 M80 39 L80 86" stroke="#c08a4a" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="50" cy="74" r="12" fill="#7ed957" ${SK}/><path d="M50 62 q2 -7 6 -8" fill="none" stroke="${OL}" stroke-width="3"/>`,
+  stop: `<path d="M50 90 L50 70" stroke="${OL}" stroke-width="7"/><polygon points="36,8 64,8 84,28 84,52 64,72 36,72 16,52 16,28" fill="#ef4444" ${SK}/><polygon points="38,14 62,14 78,30 78,50 62,66 38,66 22,50 22,30" fill="none" stroke="#fff" stroke-width="3"/><rect x="30" y="34" width="40" height="12" rx="3" fill="#fff"/>`,
+  open: `<rect x="22" y="10" width="56" height="84" rx="2" fill="#fef3c7" ${SK}/><path d="M22 10 L48 18 L48 98 L22 94 Z" fill="#a16207" ${SK}/><circle cx="42" cy="56" r="3" fill="#fde047" ${SK}/>
+    <path d="M58 40 L72 30 M60 54 L76 54 M58 68 L72 78" stroke="#facc15" stroke-width="3" stroke-linecap="round"/>`,
+});
+// Colors only compete with colors, numbers only with numbers.
+const PIC_GROUPS = [['red', 'blue', 'yellow', 'black', 'brown', 'white'], ['one', 'two', 'three', 'four', 'six', 'ten']];
+PIC_CONFLICTS.push(['one', 'dot'], ['pup', 'dog'], ['mix', 'eat'], ['jump', 'run'], ['pig', 'ham'], ['web', 'net'], ['up', 'down'], ['kid', 'man'], ['kid', 'men'], ['cub', 'dog'], ['box', 'open']);
+
 const hasPic = (w) => !!PIC[w];
 const picSVG = (w) => `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="picture">${PIC[w]}</svg>`;
 
@@ -241,6 +402,11 @@ function badgeSVG(shape, color, size = '') {
   else if (shape === 'water') body = `<path d="M50 6 C66 32 82 48 82 64 A32 32 0 0 1 18 64 C18 48 34 32 50 6 Z" fill="${color}" ${SK}/><path d="M30 66 Q40 56 50 66 Q60 76 70 66" fill="none" stroke="${light}" stroke-width="5" stroke-linecap="round"/>`;
   else if (shape === 'electric') body = `<path d="M58 4 L22 54 L46 54 L36 96 L78 40 L54 40 Z" fill="${color}" ${SK}/><path d="M54 16 L34 48" stroke="${light}" stroke-width="4" stroke-linecap="round"/>`;
   else if (shape === 'rock') body = `<path d="M20 70 L14 44 L30 22 L58 12 L80 26 L90 52 L80 80 L52 90 L30 86 Z" fill="${color}" ${SK}/><path d="M40 30 L50 48 L44 64 M62 44 L74 56 M30 60 L40 70" fill="none" stroke="${dark}" stroke-width="3.5" stroke-linecap="round"/>`;
+  else if (shape === 'dark') body = `<circle cx="50" cy="50" r="42" fill="${color}" ${SK}/><path d="M60 22 A28 28 0 1 0 72 70 A22 22 0 1 1 60 22 Z" fill="#fde68a" ${SK}/><circle cx="30" cy="30" r="2.5" fill="#fff"/><circle cx="74" cy="38" r="2" fill="#fff"/>`;
+  else if (shape === 'fairy') body = `<path d="M50 88 C20 66 10 50 14 34 C18 18 40 14 50 30 C60 14 82 18 86 34 C90 50 80 66 50 88 Z" fill="${color}" ${SK}/><path d="M50 40 L54 50 L64 52 L56 58 L58 68 L50 62 L42 68 L44 58 L36 52 L46 50 Z" fill="#fff"/>`;
+  else if (shape === 'grass') body = `<path d="M50 8 C82 22 86 62 50 92 C14 62 18 22 50 8 Z" fill="${color}" ${SK}/><path d="M50 18 L50 84 M50 40 L36 30 M50 40 L64 30 M50 58 L34 48 M50 58 L66 48" stroke="${dark}" stroke-width="3" stroke-linecap="round"/>`;
+  else if (shape === 'ice') body = `<circle cx="50" cy="50" r="42" fill="${color}" ${SK}/>${[0, 60, 120].map((a) => `<g transform="rotate(${a} 50 50)"><path d="M50 16 L50 84 M50 26 L42 18 M50 26 L58 18 M50 74 L42 82 M50 74 L58 82" stroke="#fff" stroke-width="5" stroke-linecap="round"/></g>`).join('')}`;
+  else if (shape === 'bug') body = `<path d="M34 30 Q26 14 18 16 M66 30 Q74 14 82 16" fill="none" ${SK}/><ellipse cx="50" cy="56" rx="34" ry="36" fill="${color}" ${SK}/><path d="M50 22 L50 92" ${SK}/><circle cx="50" cy="26" r="13" fill="${dark}" ${SK}/><circle cx="34" cy="52" r="6" fill="${dark}"/><circle cx="66" cy="52" r="6" fill="${dark}"/><circle cx="36" cy="74" r="5" fill="${dark}"/><circle cx="64" cy="74" r="5" fill="${dark}"/>`;
   else {
     let d = '';
     for (let t = 0; t <= Math.PI * 4.2; t += 0.2) { const r = 4 + t * 2.6, x = 50 + Math.cos(t) * r, y = 50 + Math.sin(t) * r; d += (d ? ' L' : 'M') + `${x.toFixed(1)} ${y.toFixed(1)}`; }
@@ -304,11 +470,18 @@ function regionMapSVG(J) {
 
 // ---------- save ----------
 function ensureReading() {
-  if (!save.reading) save.reading = { stops: [0, 0, 0, 0, 0], badges: [false, false, false, false, false] };
+  const n = JOURNEYS.length;
+  if (!save.reading) save.reading = { stops: Array(n).fill(0), badges: Array(n).fill(false), v: 2 };
+  const R = save.reading;
+  if (R.v !== 2) { // switched to 24-word regions: keep badges, finished regions stay finished, others start their stops again
+    R.badges = [...Array(n)].map((_, i) => !!R.badges[i]);
+    R.stops = R.badges.map((b) => (b ? 4 : 0));
+    R.v = 2;
+  }
   return save.reading;
 }
 const journeyUnlocked = (i) => i === 0 || save.reading.badges[i - 1];
-const currentJourney = () => { const r = ensureReading(); const i = r.badges.findIndex((b) => !b); return i < 0 ? 4 : i; };
+const currentJourney = () => { const r = ensureReading(); const i = r.badges.findIndex((b) => !b); return i < 0 ? JOURNEYS.length - 1 : i; };
 const badgeCount = () => (save && save.reading ? save.reading.badges.filter(Boolean).length : 0);
 let readingView = null;
 
@@ -325,9 +498,9 @@ function screenReading(r) {
     return badge ? 'done' : done >= 4 ? 'next' : 'locked';
   };
   const buddyAt = badge ? 4 : Math.min(done, 4);
-  const info = badge ? `🏅 You earned the ${J.badge}! ${r < 4 ? `Next: ${JOURNEYS[r + 1].name}!` : 'You finished every journey!'}`
-    : done >= 4 ? `Gym Leader ${J.leader} is waiting! Read all 20 words to win the ${J.badge}.`
-    : `Next stop: <b>${J.stops[done]}</b> — 5 new words`;
+  const info = badge ? `🏅 You earned the ${J.badge}! ${r < JOURNEYS.length - 1 ? `Next: ${JOURNEYS[r + 1].name}!` : 'You finished every journey!'}`
+    : done >= 4 ? `Gym Leader ${J.leader} is waiting! Read all ${J.words.length} words to win the ${J.badge}.`
+    : `Next stop: <b>${J.stops[done]}</b> — ${STOP_SIZE} new words`;
   show(`
     <div class="screen reading">
       <header class="topbar">
@@ -384,7 +557,10 @@ function pickWordOptions(target, pool) {
 }
 // Picture choices: always 3 pictures of words from the game.
 function pickPicOptions(target) {
-  const ranked = rankByFamily(target, ALL_WORDS.filter((w) => hasPic(w) && w !== target && !conflicts(w, target)));
+  const group = PIC_GROUPS.find((g) => g.includes(target));
+  const inAnyGroup = (w) => PIC_GROUPS.some((g) => g.includes(w));
+  const ok = (w) => hasPic(w) && w !== target && !conflicts(w, target) && (group ? group.includes(w) : !inAnyGroup(w));
+  const ranked = rankByFamily(target, ALL_WORDS.filter(ok));
   const picks = [];
   for (const w of ranked) { if (picks.length === 2) break; if (!picks.some((p) => conflicts(p, w))) picks.push(w); }
   return shuffle([target, ...picks]);
@@ -468,7 +644,7 @@ function wordQuiz(panel, words, pool, title, tok, onProgress) {
 
 // ---------- a stop on the journey ----------
 async function screenStop(r, s) {
-  const J = JOURNEYS[r], words = J.words.slice(s * 5, s * 5 + 5);
+  const J = JOURNEYS[r], words = J.words.slice(s * STOP_SIZE, s * STOP_SIZE + STOP_SIZE);
   const tok = show(`
     <div class="screen read-stop">
       ${readTop(`${J.name} · ${J.stops[s]}`)}
@@ -492,7 +668,7 @@ async function screenStop(r, s) {
   panel.innerHTML = `
     <div class="center-msg">
       <div class="big-emoji">⭐</div>
-      <h2>You read all 5 words!</h2>
+      <h2>You read all ${words.length} words!</h2>
       <p>${first ? (gymNext ? `Next up: the ${J.name} Gym!` : `On to ${J.stops[s + 1]}!`) : 'Great practice!'}</p>
       <div class="word-chips">${words.map((w) => `<span class="word-chip">${w}</span>`).join('')}</div>
       <div class="btn-row"><button class="btn green big" data-go="reading">Continue journey 🗺️</button></div>
@@ -508,7 +684,7 @@ async function screenGym(r) {
       <div class="split">
         <div class="stage gym-stage">
           <div class="sprite gym-leader bob">${trainerSVG(J.leader)}</div>
-          <div class="gym-meter"><div class="gym-meter-fill" style="width:0%"></div><span>0 / 20</span></div>
+          <div class="gym-meter"><div class="gym-meter-fill" style="width:0%"></div><span>0 / ${J.words.length}</span></div>
         </div>
         <div class="panel card"></div>
       </div>
@@ -518,7 +694,7 @@ async function screenGym(r) {
     <div class="center-msg">
       <div class="gym-badge-preview">${badgeSVG(J.shape, J.badgeColor)}</div>
       <h2>Gym Leader ${J.leader}${TRAINER_STYLE[J.leader] === 'dog' ? ' 🐾' : ''}</h2>
-      <p>Read all 20 ${J.name} words to win the <b>${J.badge}</b>!</p>
+      <p>Read all ${J.words.length} ${J.name} words to win the <b>${J.badge}</b>!</p>
       <div class="btn-row"><button class="btn grey" data-go="reading">Not yet</button><button class="btn green big" id="go">I'm ready!</button></div>
     </div>`;
   await new Promise((res) => ($('#go').onclick = () => { Sound.tap(); res(); }));
@@ -539,8 +715,8 @@ async function screenGym(r) {
     <div class="center-msg">
       <div class="badge-win">${badgeSVG(J.shape, J.badgeColor)}</div>
       <h2>You won the ${J.badge}!</h2>
-      <p>${first ? (r < 4 ? `Amazing reading! The road to ${JOURNEYS[r + 1].name} is open.` : 'You finished every journey. You are a Reading Champion!') : 'You read every word again. Super!'}</p>
-      <div class="btn-row"><button class="btn grey" data-go="menu">Home</button><button class="btn green big" id="onward">${first && r < 4 ? `Go to ${JOURNEYS[r + 1].name} ▶` : 'Back to the map 🗺️'}</button></div>
+      <p>${first ? (r < JOURNEYS.length - 1 ? `Amazing reading! The road to ${JOURNEYS[r + 1].name} is open.` : 'You finished every journey. You are a Reading Champion!') : 'You read every word again. Super!'}</p>
+      <div class="btn-row"><button class="btn grey" data-go="menu">Home</button><button class="btn green big" id="onward">${first && r < JOURNEYS.length - 1 ? `Go to ${JOURNEYS[r + 1].name} ▶` : 'Back to the map 🗺️'}</button></div>
     </div>`;
-  $('#onward').onclick = () => { Sound.tap(); screenReading(first && r < 4 ? r + 1 : r); };
+  $('#onward').onclick = () => { Sound.tap(); screenReading(first && r < JOURNEYS.length - 1 ? r + 1 : r); };
 }
