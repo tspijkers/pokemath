@@ -255,7 +255,10 @@ function screenHome() {
     <div class="screen home">
       <header class="home-top">
         <h1 class="logo small">Poke<span>Math</span></h1>
-        <button class="btn dex-btn" data-go="dex">📖 My Pokémon <b>${caughtCount()}</b></button>
+        <div class="top-buttons">
+          <button class="btn dex-btn" data-go="dex">📖 My Pokémon <b>${caughtCount()}</b></button>
+          <button class="btn gear-btn" id="settings" aria-label="Settings">⚙️</button>
+        </div>
       </header>
       <div class="partner-card">
         <div class="sprite partner-sprite bob">${monSVG(m)}</div>
@@ -275,6 +278,25 @@ function screenHome() {
         <button class="action a-battle" data-go="battle"><span class="icon">⚔️</span><span>Battle</span></button>
       </div>
     </div>`);
+  $('#settings').addEventListener('click', openSettings);
+}
+
+async function openSettings() {
+  Sound.tap();
+  const choice = await modal(
+    `<div class="big-emoji">⚙️</div><h2>Settings</h2>
+     <p>Reset starts the whole game over: you pick a new partner, and all levels and caught Pokémon are erased.</p>`,
+    [{ label: 'Close', value: 'close', cls: 'grey' }, { label: '🔄 Reset game', value: 'reset', cls: 'red' }]
+  );
+  if (choice !== 'reset') return;
+  const sure = await modal(
+    `<h2>Are you sure?</h2><p>Everything will be erased, and you will choose a new partner.</p>`,
+    [{ label: 'No, keep playing', value: false, cls: 'green' }, { label: 'Yes, reset', value: true, cls: 'red' }]
+  );
+  if (!sure) return;
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+  save = null;
+  screenChoose();
 }
 
 // ---------- train ----------
@@ -664,7 +686,6 @@ function screenDex() {
           </button>`;
         }).join('')}
       </div>
-      <div class="dex-footer"><button class="btn grey small" id="reset">Start over</button></div>
     </div>`);
   $('.dex-grid').addEventListener('click', (e) => {
     const c = e.target.closest('.dex-cell.have');
@@ -674,15 +695,6 @@ function screenDex() {
     modal(`<div class="sprite modal-sprite bob">${monSVG(m)}</div><h2>${m.name}</h2>
       <div class="pill-row">${m.types.map((t) => `<span class="type-pill t-${t}">${TYPE_LABEL[t]}</span>`).join('')}</div>
       <p>${m.id === save.partner.id ? 'Your partner! ⭐' : `You have caught ${save.caught[m.id]}.`}</p>`, [{ label: 'Close', value: 1, cls: 'green' }]);
-  });
-  $('#reset').addEventListener('click', async () => {
-    Sound.tap();
-    const ok = await modal('<h2>Start over?</h2><p>This erases your partner, levels and every Pokémon you caught.</p>',
-      [{ label: 'Keep playing', value: false, cls: 'green' }, { label: 'Erase everything', value: true, cls: 'red' }]);
-    if (!ok) return;
-    try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
-    save = null;
-    screenChoose();
   });
 }
 
