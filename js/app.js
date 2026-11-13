@@ -88,11 +88,11 @@ const Sound = {
 };
 document.addEventListener('pointerdown', () => Sound.init(), { passive: true });
 
-function speak(text) {
+function speak(text, rate = 0.85) {
   try {
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.rate = 0.85; u.pitch = 1.1;
+    u.rate = rate; u.pitch = 1.1;
     speechSynthesis.speak(u);
   } catch (e) {}
 }
