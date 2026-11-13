@@ -105,6 +105,23 @@ h1, h2, p { margin: 0; }
 .home-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .top-buttons { display: flex; gap: 10px; align-items: center; }
 .dex-btn { --b: #fff; --bd: #c7cad1; font-size: 1.2rem; }
+/* level colors */
+.lv-1 { --lv: #22c55e; --lvd: #15803d; } .lv-2 { --lv: #3b82f6; --lvd: #1d4ed8; }
+.lv-3 { --lv: #a855f7; --lvd: #7e22ce; } .lv-4 { --lv: #f97316; --lvd: #c2410c; }
+.level-btn { --b: var(--lv); --bd: var(--lvd); color: #fff; font-size: 1.2rem; }
+.modal .modal-buttons:has(.level-opt) { flex-direction: column; }
+.level-opt { --b: #fff; --bd: var(--lv); justify-content: flex-start; text-align: left; gap: 14px; border: 3px solid var(--lv); padding: 10px 16px; }
+.level-opt.current { --b: color-mix(in srgb, var(--lv) 14%, white); }
+.lv-num { flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%; background: var(--lv); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+.lv-text { display: flex; flex-direction: column; gap: 2px; }
+.lv-text b { font-size: 1.15rem; }
+.lv-text small { font-size: .9rem; color: var(--muted); font-weight: 700; }
+.dex-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.dex-tab { border: none; border-radius: 999px; padding: 10px 18px; font-size: 1.1rem; font-weight: 800; background: rgba(255,255,255,.8); box-shadow: 0 3px 0 rgba(0,0,0,.12); }
+.dex-tab small { opacity: .75; }
+.dex-tab.on { background: var(--lv, var(--ink)); color: #fff; }
+.dex-lv { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); width: 20px; height: 20px; border-radius: 50%; background: var(--lv); color: #fff; font-size: .75rem; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+.dex-cell[hidden] { display: none; }
 .gear-btn { --b: #fff; --bd: #c7cad1; font-size: 1.6rem; width: 58px; padding: 0; }
 .dex-btn b { background: var(--blue); color: #fff; border-radius: 999px; padding: 2px 10px; }
 .partner-card { display: flex; align-items: center; gap: 24px; padding: 18px 28px; background: #fff; border-radius: var(--radius); box-shadow: 0 6px 0 rgba(45,42,62,.12), 0 12px 30px rgba(45,42,62,.12); }
