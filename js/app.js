@@ -476,9 +476,11 @@ async function openSettings() {
   Sound.tap();
   const choice = await modal(
     `<div class="big-emoji">⚙️</div><h2>Settings</h2>
+     <p>Playing as <b>${profile.name}</b>.</p>
      <p>Reset starts <b>${profile.name}'s</b> game over: a new partner, and all ranks, caught Pokémon and reading badges are erased. Other players are not affected.</p>`,
-    [{ label: 'Close', value: 'close', cls: 'grey' }, { label: '🔄 Reset game', value: 'reset', cls: 'red' }]
+    [{ label: 'Close', value: 'close', cls: 'grey' }, { label: '👤 Switch user', value: 'switch', cls: 'blue' }, { label: '🔄 Reset game', value: 'reset', cls: 'red' }]
   );
+  if (choice === 'switch') { screenProfiles(); return; }
   if (choice !== 'reset') return;
   const sure = await modal(
     `<h2>Are you sure?</h2><p>Everything in ${profile.name}'s game will be erased, and ${profile.name} will choose a new partner.</p>`,
