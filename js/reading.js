@@ -331,8 +331,8 @@ function screenReading(r) {
   show(`
     <div class="screen reading">
       <header class="topbar">
-        <button class="home-btn" data-go="menu" aria-label="Menu">🏠</button>
-        <div class="topbar-title">Reading Journey</div>
+        <div class="home-left"><button class="home-btn" data-go="menu" aria-label="Menu">🏠</button><h1 class="logo small">Poke<span>Read</span></h1></div>
+        <div style="flex:1"></div>
         <div class="badge-row">${JOURNEYS.map((j, i) => `<span class="badge-slot${save.reading.badges[i] ? ' got' : ''}">${save.reading.badges[i] ? badgeSVG(j.shape, j.badgeColor) : ''}</span>`).join('')}</div>
       </header>
       <div class="region-tabs">
