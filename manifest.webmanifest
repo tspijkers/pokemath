@@ -1,6 +1,6 @@
 {
-  "name": "PokeMath",
-  "short_name": "PokeMath",
+  "name": "PokeLearn",
+  "short_name": "PokeLearn",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
