@@ -826,14 +826,15 @@ async function runBattle(cfg) {
     Sound.win();
     confetti();
     save.caught[m.id] = 1;
-    save.team[m.id] = { rank: 1, rounds: 0 };
+    const caughtRank = foe().level; // keeps the rank it had in the wild
+    save.team[m.id] = { rank: caughtRank, rounds: 0 };
     persist();
     const left = LEVEL_POKEMON[mathLevel()].filter((id) => !save.caught[id]).length;
     panel.innerHTML = `
       <div class="center-msg">
         <div class="sprite modal-sprite bob">${monSVG(m)}</div>
         <h2>Gotcha! ${m.name} was caught!</h2>
-        <p>${m.name} joined your team at Rank 1. ${left ? `${left} more to find in Level ${mathLevel()}!` : `That was the last one in Level ${mathLevel()}! 🏆`}</p>
+        <p>${m.name} joined your team at Rank ${caughtRank} ${'★'.repeat(caughtRank)}. ${left ? `${left} more to find in Level ${mathLevel()}!` : `That was the last one in Level ${mathLevel()}! 🏆`}</p>
         <div class="btn-row"><button class="btn grey" data-go="home">Home</button><button class="btn blue" id="use-new">Use ${m.name}</button>${left ? '<button class="btn green" data-go="catch">Catch more</button>' : ''}</div>
       </div>`;
     $('#use-new').onclick = () => useMon(m.id);
