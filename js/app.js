@@ -7,9 +7,26 @@ const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---------- save data ----------
-const SAVE_KEY = 'pokemath-save-v1';
-let save = loadSave();
+// Each player has their own save. The old single save (from before profiles) is LEGACY_KEY.
+const LEGACY_KEY = 'pokemath-save-v1';
+const PROFILES = [
+  { id: 'tommy', name: 'Tommy', pin: '0611', color: '#3b82f6' },
+  { id: 'evan', name: 'Evan', pin: '1000', color: '#22c55e' },
+  { id: 'user3', name: 'User 3', pin: '0020', color: '#f97316' },
+  { id: 'user4', name: 'User 4', pin: '0300', color: '#a855f7' },
+  { id: 'user5', name: 'User 5', pin: '4000', color: '#ec4899' },
+  { id: 'user6', name: 'User 6', pin: '5555', color: '#14b8a6' },
+];
+let profile = null;
+let SAVE_KEY = null;
+let save = null;
+const keyFor = (id) => `pokemath-save-v1:${id}`;
+function readSave(key) {
+  try { const s = JSON.parse(localStorage.getItem(key)); if (s && s.partner && DEX[s.partner.id]) return s; } catch (e) {}
+  return null;
+}
 function loadSave() {
+  if (!SAVE_KEY) return null;
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (s && s.partner && DEX[s.partner.id]) return upgradeSave(s);
@@ -28,6 +45,7 @@ function upgradeSave(s) {
   return s;
 }
 function persist() {
+  if (!SAVE_KEY || !save) return;
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
 }
 const caughtCount = () => Object.keys(save.caught).length;
@@ -270,11 +288,12 @@ function screenChoose() {
 
 // ---------- start menu: Math or Reading ----------
 function screenMenu() {
+  if (!profile) return screenProfiles();
   if (!save) return screenChoose();
   ensureReading();
   show(`
     <div class="screen menu">
-      <div class="menu-top"><div></div><button class="btn gear-btn" id="settings" aria-label="Settings">⚙️</button></div>
+      <div class="menu-top"><button class="btn player-btn" id="switch-player" style="--pc:${profile.color}">👤 ${profile.name} <small>switch</small></button><button class="btn gear-btn" id="settings" aria-label="Settings">⚙️</button></div>
       <h1 class="logo">Poke<span>Learn</span></h1>
       <div class="sprite menu-buddy bob">${monSVG(partnerMon())}</div>
       <p class="subtitle">What do you want to do today?</p>
@@ -284,6 +303,102 @@ function screenMenu() {
       </div>
     </div>`);
   $('#settings').addEventListener('click', openSettings);
+  $('#switch-player').addEventListener('click', () => { Sound.tap(); screenProfiles(); });
+}
+
+// ---------- who's playing? ----------
+function profileSummary(p) {
+  const s = readSave(keyFor(p.id));
+  if (!s) return { s: null, text: 'New player' };
+  const badges = s.reading ? s.reading.badges.filter(Boolean).length : 0;
+  return { s, text: `${Object.keys(s.caught).length} Pokémon · ${badges} badge${badges === 1 ? '' : 's'}` };
+}
+function screenProfiles() {
+  profile = null; SAVE_KEY = null; save = null;
+  readingView = null; lastProblem = null;
+  show(`
+    <div class="screen profiles">
+      <h1 class="logo">Poke<span>Learn</span></h1>
+      <p class="subtitle">Who is playing?</p>
+      <div class="profile-grid">
+        ${PROFILES.map((p) => {
+          const { s, text } = profileSummary(p);
+          return `<button class="profile-card" data-id="${p.id}" style="--pc:${p.color}">
+            <div class="profile-avatar">${s ? `<div class="sprite">${monSVG(DEX[s.active || s.partner.id])}</div>` : `<span>${p.name[0]}</span>`}</div>
+            <div class="profile-name">${p.name}</div>
+            <div class="profile-sub">${text}</div>
+          </button>`;
+        }).join('')}
+      </div>
+    </div>`);
+  $('.profile-grid').addEventListener('click', (e) => {
+    const c = e.target.closest('.profile-card');
+    if (!c) return;
+    Sound.tap();
+    askPin(PROFILES.find((p) => p.id === c.dataset.id));
+  });
+}
+function askPin(p) {
+  let code = '';
+  const el = document.createElement('div');
+  el.className = 'modal-back';
+  el.innerHTML = `
+    <div class="modal pin-modal" style="--pc:${p.color}">
+      <div class="profile-avatar small"><span>${p.name[0]}</span></div>
+      <h2>Hi ${p.name}!</h2>
+      <p>Type your secret code</p>
+      <div class="pin-dots">${[0, 1, 2, 3].map(() => '<span></span>').join('')}</div>
+      <div class="keypad pin-pad">
+        ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button data-k="${n}">${n}</button>`).join('')}
+        <button data-k="back" class="k-del" aria-label="Back">✕</button><button data-k="0">0</button><button data-k="del" class="k-del" aria-label="Erase">⌫</button>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+  const dots = [...el.querySelectorAll('.pin-dots span')], box = el.querySelector('.pin-modal');
+  const draw = () => dots.forEach((d, i) => d.classList.toggle('on', i < code.length));
+  const close = () => { el.remove(); document.removeEventListener('keydown', onKey); };
+  const press = (k) => {
+    if (k === 'back') { Sound.tap(); close(); return; }
+    if (k === 'del') { code = code.slice(0, -1); Sound.tap(); draw(); return; }
+    if (code.length >= 4) return;
+    code += k; Sound.tap(); draw();
+    if (code.length === 4) {
+      if (code === p.pin) { setTimeout(() => { close(); openProfile(p); }, 200); }
+      else {
+        setTimeout(() => {
+          Sound.wrong();
+          box.classList.remove('shake'); void box.offsetWidth; box.classList.add('shake');
+          code = ''; draw();
+        }, 200);
+      }
+    }
+  };
+  el.querySelector('.pin-pad').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) press(b.dataset.k); });
+  el.addEventListener('click', (e) => { if (e.target === el) close(); });
+  const onKey = (e) => { if (/^[0-9]$/.test(e.key)) press(e.key); else if (e.key === 'Backspace') press('del'); else if (e.key === 'Escape') press('back'); };
+  document.addEventListener('keydown', onKey);
+}
+async function openProfile(p) {
+  profile = p;
+  SAVE_KEY = keyFor(p.id);
+  save = loadSave();
+  // A game saved before profiles existed: ask once who it belongs to.
+  const legacy = readSave(LEGACY_KEY);
+  if (!save && legacy) {
+    const badges = legacy.reading ? legacy.reading.badges.filter(Boolean).length : 0;
+    const mine = await modal(
+      `<div class="sprite modal-sprite bob">${monSVG(DEX[legacy.active || legacy.partner.id])}</div>
+       <h2>Is this your game?</h2>
+       <p>There is a game from before with ${DEX[legacy.partner.id].name}, ${Object.keys(legacy.caught).length} Pokémon and ${badges} reading badge${badges === 1 ? '' : 's'}.</p>`,
+      [{ label: 'No, start new', value: false, cls: 'grey' }, { label: 'Yes, it is mine!', value: true, cls: 'green' }]
+    );
+    if (mine) {
+      try { localStorage.setItem(SAVE_KEY, localStorage.getItem(LEGACY_KEY)); localStorage.removeItem(LEGACY_KEY); } catch (e) {}
+      save = loadSave();
+    }
+  }
+  Sound.levelUp();
+  screenMenu();
 }
 
 // ---------- home ----------
@@ -361,12 +476,12 @@ async function openSettings() {
   Sound.tap();
   const choice = await modal(
     `<div class="big-emoji">⚙️</div><h2>Settings</h2>
-     <p>Reset starts the whole game over: you pick a new partner, and all ranks, caught Pokémon and reading badges are erased.</p>`,
+     <p>Reset starts <b>${profile.name}'s</b> game over: a new partner, and all ranks, caught Pokémon and reading badges are erased. Other players are not affected.</p>`,
     [{ label: 'Close', value: 'close', cls: 'grey' }, { label: '🔄 Reset game', value: 'reset', cls: 'red' }]
   );
   if (choice !== 'reset') return;
   const sure = await modal(
-    `<h2>Are you sure?</h2><p>Everything will be erased, and you will choose a new partner.</p>`,
+    `<h2>Are you sure?</h2><p>Everything in ${profile.name}'s game will be erased, and ${profile.name} will choose a new partner.</p>`,
     [{ label: 'No, keep playing', value: false, cls: 'green' }, { label: 'Yes, reset', value: true, cls: 'red' }]
   );
   if (!sure) return;
@@ -816,7 +931,7 @@ function screenDex(picking = false) {
 }
 
 // ---------- start ----------
-document.addEventListener('DOMContentLoaded', () => screenMenu());
+document.addEventListener('DOMContentLoaded', () => screenProfiles());
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});
