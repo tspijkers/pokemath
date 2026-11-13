@@ -117,7 +117,7 @@ app.addEventListener('click', (e) => {
   ({ menu: screenMenu, home: screenHome, train: screenTrain, catch: screenCatch, battle: screenBattle, dex: screenDex, reading: () => screenReading() })[go.dataset.go]();
 });
 
-const topbar = (title) => `<header class="topbar"><button class="home-btn" data-go="home" aria-label="Home">🏠</button><div class="topbar-title">${title}</div><div class="topbar-spacer"></div></header>`;
+const topbar = (title, back = 'home') => `<header class="topbar"><button class="home-btn" data-go="${back}" aria-label="Back">${back === 'reading' ? '🗺️' : '🏠'}</button><div class="topbar-title">${title}</div><div class="topbar-spacer"></div></header>`;
 
 function modal(html, buttons) {
   return new Promise((resolve) => {
@@ -607,10 +607,10 @@ function hpBox(name, level, hp, maxHp, catchLine) {
     <div class="hp-num">${Math.max(0, hp)} / ${maxHp} HP</div>`;
 }
 
-function battleShell(title) {
+function battleShell(title, back = 'home') {
   return `
     <div class="screen battle-screen">
-      ${topbar(title)}
+      ${topbar(title, back)}
       <div class="battle-layout">
         <div class="arena">
           <div class="foe-side">
@@ -667,15 +667,20 @@ function retrigger(el, cls) {
 }
 
 // ---------- the battle ----------
-// cfg: { mode: 'wild' | 'trainer', foes: [...], trainer?: name }
+// cfg: { mode: 'wild' | 'trainer', foes: [...], trainer?: name,
+//        allyId?: Pokémon to use (default: the active one), ask?: (panel, move, tok) => mistakes,
+//        title?, back?: 'home' | 'reading', onWin?: (panel, pm) => void, onRun?: () => void }
 async function runBattle(cfg) {
   const isWild = cfg.mode === 'wild';
-  const tok = show(battleShell(isWild ? 'Catch' : 'Battle'));
+  const tok = show(battleShell(cfg.title || (isWild ? 'Catch' : 'Battle'), cfg.back || 'home'));
   const panel = $('.panel'), foeSide = $('.foe-side'), allySide = $('.ally-side');
   const foeSprite = $('.foe-sprite'), allySprite = $('.ally-sprite');
-  const pm = partnerMon();
+  const allyId = cfg.allyId || save.active;
+  const pm = DEX[allyId];
+  const allyRank = save.team[allyId].rank;
+  const allyMoves = movesFor(allyId).slice(0, allyRank);
   const bonus = groupBonus(pm.id);
-  const ally = { maxHp: Math.round((70 + 10 * activeRank()) * bonus) };
+  const ally = { maxHp: Math.round((70 + 10 * allyRank) * bonus) };
   ally.hp = ally.maxHp;
   const foes = cfg.foes.map((f) => ({ ...f, hp: f.maxHp }));
   let fi = 0;
@@ -685,7 +690,7 @@ async function runBattle(cfg) {
     $('.foe-hp').innerHTML = hpBox(foe().mon.name, foe().level, foe().hp, foe().maxHp, isWild);
     $('.foe-hp').classList.toggle('catchable', isWild && foe().hp < 20);
   };
-  const drawAlly = () => { $('.ally-hp').innerHTML = hpBox(pm.name, activeRank(), ally.hp, ally.maxHp, false); };
+  const drawAlly = () => { $('.ally-hp').innerHTML = hpBox(pm.name, allyRank, ally.hp, ally.maxHp, false); };
   const setFoeSprite = () => { foeSprite.innerHTML = monSVG(foe().mon); foeSprite.className = 'sprite foe-sprite enter-right'; };
 
   allySprite.innerHTML = monSVG(pm);
@@ -713,14 +718,16 @@ async function runBattle(cfg) {
     if (!alive(tok)) return;
     if (action === 'run') {
       await say(panel, 'You got away safely!', 1200);
-      if (alive(tok)) screenHome();
+      if (alive(tok)) (cfg.onRun || screenHome)();
       return;
     }
     if (action === 'catch') { await doCatch(); return; }
 
     // --- solve problems to power the move ---
     const move = action;
-    const mistakes = await solveProblems(panel, { count: ATTACK_PROBLEMS, title: `Power up <b class="t-text-${move.type}">${move.name}</b>!` });
+    const mistakes = cfg.ask
+      ? await cfg.ask(panel, move, tok)
+      : await solveProblems(panel, { count: ATTACK_PROBLEMS, title: `Power up <b class="t-text-${move.type}">${move.name}</b>!` });
     if (!alive(tok)) return;
 
     // --- our attack ---
@@ -775,7 +782,7 @@ async function runBattle(cfg) {
     await wait(700);
     if (!alive(tok)) return;
     if (mistakes === 0) {
-      await say(panel, `${pm.name} hardly felt it! Perfect math! ⭐`, 1300);
+      await say(panel, `${pm.name} hardly felt it! Perfect ${cfg.ask ? 'reading' : 'math'}! ⭐`, 1300);
       if (!alive(tok)) return;
     }
     if (ally.hp <= 0) return battleLost();
@@ -788,7 +795,7 @@ async function runBattle(cfg) {
         <div class="choose-move">
           <div class="choose-title">What should ${pm.name} do?</div>
           <div class="move-grid">
-            ${knownMoves().map((mv, i) => `<button class="move-btn t-${mv.type}" data-i="${i}"><span class="mv-name">${mv.name}</span><span class="mv-power">${'💥'.repeat(1 + Math.floor((mv.power - 20) / 6))}</span></button>`).join('')}
+            ${allyMoves.map((mv, i) => `<button class="move-btn t-${mv.type}" data-i="${i}"><span class="mv-name">${mv.name}</span><span class="mv-power">${'💥'.repeat(1 + Math.floor((mv.power - 20) / 6))}</span></button>`).join('')}
           </div>
           <div class="extra-row">
             ${isWild ? `<button class="btn catch-btn ${canCatch ? 'ready' : ''}" data-a="catch" ${canCatch ? '' : 'disabled'}>${ballSVG()} ${canCatch ? 'Throw Poké Ball!' : 'Catch when HP is under 20'}</button>` : ''}
@@ -800,7 +807,7 @@ async function runBattle(cfg) {
         if (!b || b.disabled) return;
         Sound.tap();
         if (b.dataset.a) resolve(b.dataset.a);
-        else resolve(knownMoves()[+b.dataset.i]);
+        else resolve(allyMoves[+b.dataset.i]);
       });
     });
   }
@@ -844,6 +851,7 @@ async function runBattle(cfg) {
     Sound.win();
     confetti();
     allySprite.classList.add('jump');
+    if (cfg.onWin) return cfg.onWin(panel, pm);
     panel.innerHTML = `
       <div class="center-msg">
         <div class="big-emoji">🏆</div>
@@ -860,8 +868,8 @@ async function runBattle(cfg) {
       <div class="center-msg">
         <div class="big-emoji">😵</div>
         <h2>${pm.name} is too tired!</h2>
-        <p>Careful math makes ${pm.name} stronger. Want to try again?</p>
-        <div class="btn-row"><button class="btn grey" data-go="home">Home</button><button class="btn green" id="retry">Try again</button></div>
+        <p>Careful ${cfg.ask ? 'reading' : 'math'} makes ${pm.name} stronger. Want to try again?</p>
+        <div class="btn-row"><button class="btn grey" data-go="${cfg.back || 'home'}">${cfg.back === 'reading' ? 'Back' : 'Home'}</button><button class="btn green" id="retry">Try again</button></div>
       </div>`;
     $('#retry').onclick = () => { Sound.tap(); runBattle(cfg); };
   }
@@ -907,12 +915,13 @@ function screenDex(picking = false) {
       <div class="dex-tabs">
         <button class="dex-tab" data-lv="0">All</button>
         ${[1, 2, 3, 4].map((lv) => `<button class="dex-tab lv-${lv}" data-lv="${lv}">Level ${lv} <small>${caughtInLevel(lv)}/${LEVEL_POKEMON[lv].length}</small></button>`).join('')}
+        <button class="dex-tab lv-5" data-lv="5">✨ Legendary Pokémon <small>${caughtInLevel(5)}/${LEVEL_POKEMON[5].length}</small></button>
       </div>
       <div class="dex-grid">
         ${Array.from({ length: DEX_COUNT }, (_, k) => {
           const m = DEX[k + 1], n = save.caught[m.id];
           return `<button class="dex-cell ${n ? 'have' : 'missing'}" data-id="${m.id}" data-lv="${LEVEL_OF[m.id]}" ${n ? '' : 'disabled'}>
-            <span class="dex-lv lv-${LEVEL_OF[m.id]}">${LEVEL_OF[m.id]}</span>
+            <span class="dex-lv lv-${LEVEL_OF[m.id]}">${LEVEL_OF[m.id] === LEGENDARY_GROUP ? '✨' : LEVEL_OF[m.id]}</span>
             <span class="dex-no">#${String(m.id).padStart(3, '0')}</span>
             ${m.id === save.partner.id ? '<span class="dex-star">⭐</span>' : ''}
             ${m.id === save.active ? '<span class="dex-using">Using</span>' : ''}
@@ -940,7 +949,7 @@ function screenDex(picking = false) {
     const moves = movesFor(m.id);
     const go = await modal(`<div class="sprite modal-sprite bob">${monSVG(m)}</div><h2>${m.name}${m.id === save.partner.id ? ' ⭐' : ''}</h2>
       <div class="pill-row">${m.types.map((t) => `<span class="type-pill t-${t}">${TYPE_LABEL[t]}</span>`).join('')}</div>
-      <p>Rank ${me.rank} <span class="stars">${'★'.repeat(me.rank)}<span class="off">${'★'.repeat(5 - me.rank)}</span></span> · Found in Level ${LEVEL_OF[m.id]}</p>
+      <p>Rank ${me.rank} <span class="stars">${'★'.repeat(me.rank)}<span class="off">${'★'.repeat(5 - me.rank)}</span></span> · ${LEVEL_OF[m.id] === LEGENDARY_GROUP ? 'Won in a PokeRead tournament ✨' : `Found in Level ${LEVEL_OF[m.id]}`}</p>
       <div class="moves modal-moves">${moves.map((mv, i) => `<span class="move-chip t-${mv.type}${i < me.rank ? '' : ' locked'}">${i < me.rank ? '' : '🔒 '}${mv.name}</span>`).join('')}</div>`,
       using ? [{ label: 'Close', value: 0, cls: 'grey' }, { label: '✅ Using now', value: 0, cls: 'green' }]
             : [{ label: 'Close', value: 0, cls: 'grey' }, { label: `Use ${m.name}`, value: 1, cls: 'green' }]);
