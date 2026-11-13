@@ -88,7 +88,7 @@ app.addEventListener('click', (e) => {
   const go = e.target.closest('[data-go]');
   if (!go) return;
   Sound.tap();
-  ({ home: screenHome, train: screenTrain, catch: screenCatch, battle: screenBattle, dex: screenDex })[go.dataset.go]();
+  ({ menu: screenMenu, home: screenHome, train: screenTrain, catch: screenCatch, battle: screenBattle, dex: screenDex, reading: () => screenReading() })[go.dataset.go]();
 });
 
 const topbar = (title) => `<header class="topbar"><button class="home-btn" data-go="home" aria-label="Home">🏠</button><div class="topbar-title">${title}</div><div class="topbar-spacer"></div></header>`;
@@ -264,8 +264,26 @@ function screenChoose() {
     persist();
     Sound.win();
     confetti();
-    screenHome();
+    screenMenu();
   }));
+}
+
+// ---------- start menu: Math or Reading ----------
+function screenMenu() {
+  if (!save) return screenChoose();
+  ensureReading();
+  show(`
+    <div class="screen menu">
+      <div class="menu-top"><div></div><button class="btn gear-btn" id="settings" aria-label="Settings">⚙️</button></div>
+      <h1 class="logo">Poke<span>Math</span></h1>
+      <div class="sprite menu-buddy bob">${monSVG(partnerMon())}</div>
+      <p class="subtitle">What do you want to do today?</p>
+      <div class="menu-grid">
+        <button class="menu-btn m-math" data-go="home"><span class="icon">🔢</span><span>Math</span><small>Level ${mathLevel()} · ${caughtCount()} Pokémon</small></button>
+        <button class="menu-btn m-read" data-go="reading"><span class="icon">📖</span><span>Reading</span><small>${badgeCount()} of 5 badges</small></button>
+      </div>
+    </div>`);
+  $('#settings').addEventListener('click', openSettings);
 }
 
 // ---------- home ----------
@@ -279,7 +297,7 @@ function screenHome() {
   show(`
     <div class="screen home">
       <header class="home-top">
-        <h1 class="logo small">Poke<span>Math</span></h1>
+        <div class="home-left"><button class="home-btn" data-go="menu" aria-label="Menu">🏠</button><h1 class="logo small">Poke<span>Math</span></h1></div>
         <div class="top-buttons">
           <button class="btn dex-btn" data-go="dex">📖 My Pokémon <b>${caughtCount()}</b></button>
           <button class="btn level-btn lv-${mathLevel()}" id="level">🎯 Level ${mathLevel()}</button>
@@ -343,7 +361,7 @@ async function openSettings() {
   Sound.tap();
   const choice = await modal(
     `<div class="big-emoji">⚙️</div><h2>Settings</h2>
-     <p>Reset starts the whole game over: you pick a new partner, and all ranks and caught Pokémon are erased.</p>`,
+     <p>Reset starts the whole game over: you pick a new partner, and all ranks, caught Pokémon and reading badges are erased.</p>`,
     [{ label: 'Close', value: 'close', cls: 'grey' }, { label: '🔄 Reset game', value: 'reset', cls: 'red' }]
   );
   if (choice !== 'reset') return;
@@ -798,7 +816,7 @@ function screenDex(picking = false) {
 }
 
 // ---------- start ----------
-screenHome();
+document.addEventListener('DOMContentLoaded', () => screenMenu());
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('sw.js').catch(() => {});
