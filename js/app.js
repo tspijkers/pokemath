@@ -12,7 +12,7 @@ const LEGACY_KEY = 'pokemath-save-v1';
 const PROFILES = [
   { id: 'tommy', name: 'Tommy', pin: '0611', color: '#3b82f6' },
   { id: 'evan', name: 'Evan', pin: '1000', color: '#22c55e' },
-  { id: 'user3', name: 'User 3', pin: '0020', color: '#f97316' },
+  { id: 'user3', name: 'Kurtzes', pin: '6143', color: '#f97316' },
   { id: 'user4', name: 'User 4', pin: '0300', color: '#a855f7' },
   { id: 'user5', name: 'User 5', pin: '4000', color: '#ec4899' },
   { id: 'user6', name: 'User 6', pin: '5555', color: '#14b8a6' },
