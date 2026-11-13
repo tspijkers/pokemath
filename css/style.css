@@ -475,6 +475,38 @@ h1, h2, p { margin: 0; }
 .player-btn small { font-size: .85rem; color: var(--muted); font-weight: 700; }
 @media (max-aspect-ratio: 1/1), (max-width: 760px) { .profile-grid { grid-template-columns: repeat(2, 1fr); } .profile-avatar { width: 90px; height: 90px; } }
 
+/* ---------- tournaments ---------- */
+.tourney-tab { --rc: #f59e0b; border: 2px dashed #f59e0b; }
+.tourney-tab.won { background: #fff6cc; }
+.tourney-prize { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 20px; text-align: center; }
+.tourney-prize h2 { font-size: 2rem; font-weight: 900; }
+.tourney-prize p { font-size: 1.2rem; font-weight: 700; color: var(--muted); }
+.prize-art { width: min(100%, 260px); aspect-ratio: 1; }
+.prize-art svg, .prize-reveal svg { width: 100%; height: 100%; }
+.prize-art.hidden-prize { filter: brightness(0) opacity(.35); }
+.prize-reveal { width: 200px; height: 200px; animation: badge-pop 1s cubic-bezier(.2, 1.5, .4, 1); filter: drop-shadow(0 0 22px #ffd43b); }
+.tourney-panel { gap: 14px; justify-content: flex-start; }
+.bracket { display: flex; flex-direction: column; gap: 10px; }
+.bracket-row { display: flex; align-items: center; gap: 12px; background: #f8fafc; border-radius: 18px; padding: 8px 14px; border: 3px solid #e2e8f0; }
+.bracket-row.next { border-color: var(--oc); background: color-mix(in srgb, var(--oc) 12%, white); animation: pulse 1.4s infinite; }
+.bracket-row.done { opacity: .75; }
+.bracket-row.locked { opacity: .55; }
+.bracket-avatar { width: 62px; height: 62px; flex-shrink: 0; }
+.bracket-text { display: flex; flex-direction: column; flex: 1; }
+.bracket-text small { font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+.bracket-text b { font-size: 1.4rem; }
+.bracket-state { font-size: 1.8rem; }
+.tourney-note { text-align: center; color: var(--muted); font-weight: 700; }
+.tourney-open { font-size: 1.2rem !important; color: #b45309 !important; }
+.fighter-modal { width: min(720px, 100%); max-height: 90vh; overflow: auto; }
+.fighter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+.fighter { border: none; background: #f8fafc; border-radius: 18px; padding: 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; box-shadow: 0 4px 0 #cbd5e1; }
+.fighter:active { transform: translateY(3px); }
+.fighter .sprite { width: 86px; height: 86px; }
+.fighter b { font-size: 1rem; }
+.fighter span { color: #f5b301; font-size: .85rem; }
+.lv-5 { --lv: #eab308; --lvd: #a16207; }
+
 /* ---------- confetti ---------- */
 .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
 .confetti span { position: absolute; top: -20px; width: 12px; height: 18px; border-radius: 3px; animation: fall linear forwards; }
