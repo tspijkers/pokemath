@@ -17,6 +17,14 @@ const PROFILES = [
   { id: 'user5', name: 'User 5', pin: '4000', color: '#ec4899' },
   { id: 'user6', name: 'User 6', pin: '5555', color: '#14b8a6' },
 ];
+// One-time reset of every player's game on this device. Raise RESET_ROUND to wipe all games again.
+const RESET_ROUND = '1';
+try {
+  if (localStorage.getItem('pokemath-reset-round') !== RESET_ROUND) {
+    Object.keys(localStorage).filter((k) => k.startsWith('pokemath-save')).forEach((k) => localStorage.removeItem(k));
+    localStorage.setItem('pokemath-reset-round', RESET_ROUND);
+  }
+} catch (e) {}
 let profile = null;
 let SAVE_KEY = null;
 let save = null;
