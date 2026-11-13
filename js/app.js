@@ -586,7 +586,13 @@ function pickWild() {
   for (let i = 0; i < ids.length; i++) { x -= weights[i]; if (x <= 0) return DEX[ids[i]]; }
   return DEX[ids[0]];
 }
-function makeFoe(mon) {
+function makeFoe(mon, wild = false) {
+  if (wild) {
+    // Wild Pokémon have a random rank (1–5), independent of the player's Pokémon.
+    const rank = rand(1, 5);
+    const maxHp = 45 + 12 * rank + rand(0, 10);
+    return { mon, level: rank, maxHp, hp: maxHp };
+  }
   const L = activeRank();
   const maxHp = 50 + 10 * L + rand(0, 10);
   return { mon, level: Math.max(1, Math.min(5, L + rand(-1, 1))), maxHp, hp: maxHp };
@@ -688,7 +694,7 @@ async function runBattle(cfg) {
 
   if (isWild) {
     setFoeSprite(); drawFoe();
-    await say(panel, `A wild <b>${foe().mon.name}</b> appeared!`);
+    await say(panel, `A wild <b>${foe().mon.name}</b> appeared! <span class="wild-rank">Rank ${foe().level} ${'★'.repeat(foe().level)}</span>`);
   } else {
     foeSprite.innerHTML = trainerSVG(cfg.trainer);
     foeSprite.className = 'sprite foe-sprite enter-right';
@@ -754,7 +760,8 @@ async function runBattle(cfg) {
 
     // --- they fight back (only hard if there were mistakes) ---
     const fm = FOE_MOVE[foe().mon.types[0]];
-    const back = 4 + 7 * Math.min(mistakes, 4);
+    // Stronger foes hit a little harder, but perfect answers always keep the player safe.
+    const back = (isWild ? 3 + foe().level : 4) + 7 * Math.min(mistakes, 4);
     await say(panel, `${foe().mon.name} used <b>${fm}</b>!`, 900);
     if (!alive(tok)) return;
     retrigger(foeSprite, 'lunge-left');
@@ -861,7 +868,7 @@ async function runBattle(cfg) {
 
 function screenCatch() {
   const mon = pickWild();
-  if (mon) return runBattle({ mode: 'wild', foes: [makeFoe(mon)] });
+  if (mon) return runBattle({ mode: 'wild', foes: [makeFoe(mon, true)] });
   // every Pokémon in this Level is caught
   const lv = mathLevel(), nextLv = [1, 2, 3, 4].find((l) => l !== lv && caughtInLevel(l) < LEVEL_POKEMON[l].length);
   show(`
