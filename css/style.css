@@ -103,7 +103,9 @@ h1, h2, p { margin: 0; }
 
 /* ---------- home ---------- */
 .home-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.top-buttons { display: flex; gap: 10px; align-items: center; }
 .dex-btn { --b: #fff; --bd: #c7cad1; font-size: 1.2rem; }
+.gear-btn { --b: #fff; --bd: #c7cad1; font-size: 1.6rem; width: 58px; padding: 0; }
 .dex-btn b { background: var(--blue); color: #fff; border-radius: 999px; padding: 2px 10px; }
 .partner-card { display: flex; align-items: center; gap: 24px; padding: 18px 28px; background: #fff; border-radius: var(--radius); box-shadow: 0 6px 0 rgba(45,42,62,.12), 0 12px 30px rgba(45,42,62,.12); }
 .partner-sprite { width: clamp(170px, 26vw, 260px); aspect-ratio: 1; flex-shrink: 0; }
