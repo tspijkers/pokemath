@@ -14,6 +14,32 @@ const LEGENDARY = new Set([144, 145, 146, 150, 151]);
 // Fully evolved Pokémon show up a bit less often than first forms.
 const FINAL_FORMS = new Set([3, 6, 9, 12, 15, 18, 20, 22, 24, 26, 28, 31, 34, 36, 38, 40, 42, 45, 47, 49, 51, 53, 55, 57, 59, 62, 65, 68, 71, 73, 76, 78, 80, 82, 85, 87, 89, 91, 94, 97, 99, 101, 103, 105, 110, 112, 117, 119, 121, 130, 134, 135, 136, 139, 141, 149]);
 
+// ---------- Levels: math difficulty + which Pokémon can be found ----------
+// add/sub: numbers 1..max for + and − (answers never below zero)
+// mul: numbers 1..max for ×
+const MATH_LEVELS = {
+  1: { addSub: 20, mul: 0, label: '+ and − up to 20' },
+  2: { addSub: 20, mul: 5, label: '+ and − up to 20, × up to 5' },
+  3: { addSub: 50, mul: 5, label: '+ and − up to 50, × up to 5' },
+  4: { addSub: 0, mul: 10, label: '× up to 10' },
+};
+const LEVEL_POKEMON = {
+  // 55: first forms (incl. the four partners) + Ditto
+  1: [1, 4, 7, 25, 10, 13, 16, 19, 21, 23, 27, 29, 32, 35, 37, 39, 41, 43, 46, 48, 50, 52, 54, 56, 58, 60, 63, 66, 69, 72,
+    74, 77, 79, 81, 84, 86, 88, 90, 92, 96, 98, 100, 102, 104, 109, 111, 116, 118, 120, 129, 133, 138, 140, 147, 132],
+  // 50: middle evolutions, one-of-a-kind Pokémon, easier final forms
+  2: [2, 5, 8, 11, 14, 17, 30, 33, 44, 61, 64, 67, 70, 75, 93, 148,
+    83, 95, 106, 107, 108, 113, 114, 115, 122, 123, 124, 125, 126, 127, 128, 131, 137, 142,
+    12, 15, 20, 22, 24, 28, 36, 40, 42, 47, 49, 51, 53, 57, 85, 119],
+  // 30: tougher final forms + legendary birds
+  3: [18, 38, 45, 55, 62, 71, 73, 78, 80, 82, 87, 89, 91, 97, 99, 101, 103, 105, 110, 112, 117, 121, 134, 135, 136, 139, 141,
+    144, 145, 146],
+  // 16: Mew, Mewtwo and the strongest final evolutions
+  4: [151, 150, 3, 6, 9, 149, 130, 65, 94, 68, 76, 59, 143, 26, 34, 31],
+};
+const LEVEL_OF = {};
+for (const [lv, ids] of Object.entries(LEVEL_POKEMON)) ids.forEach((id) => (LEVEL_OF[id] = +lv));
+
 // Starter order as the player sees it
 const STARTERS = [7, 1, 4, 25];
 
