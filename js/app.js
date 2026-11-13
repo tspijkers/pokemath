@@ -115,17 +115,28 @@ function confetti() {
 // ---------- math problems ----------
 const TRAIN_PROBLEMS = 6;   // problems to learn one new move
 const ATTACK_PROBLEMS = 2;  // problems before each attack in Catch / Battle
-// Addition: both numbers 1–9. Subtraction: numbers under 20, never below zero.
+// The kinds of problems depend on the chosen Level (see MATH_LEVELS in data.js).
+const mathLevel = () => (save && MATH_LEVELS[save.mathLevel]) ? save.mathLevel : 1;
+const OP_SIGN = { '+': '+', '-': '−', 'x': '×' };
+const OP_WORD = { '+': 'plus', '-': 'minus', 'x': 'times' };
 let lastProblem = null;
 function makeProblem() {
+  const cfg = MATH_LEVELS[mathLevel()];
+  const ops = [];
+  if (cfg.addSub) ops.push('+', '-');
+  if (cfg.mul) ops.push('x');
   let p;
   do {
-    if (Math.random() < 0.5) {
-      const a = rand(1, 9), b = rand(1, 9);
-      p = { a, b, op: '+', ans: a + b };
+    const op = pick(ops);
+    if (op === '+') {
+      const a = rand(1, cfg.addSub), b = rand(1, cfg.addSub);
+      p = { a, b, op, ans: a + b };
+    } else if (op === '-') {
+      const a = rand(2, cfg.addSub), b = rand(1, a - 1);
+      p = { a, b, op, ans: a - b };
     } else {
-      const a = rand(2, 19), b = rand(1, a - 1);
-      p = { a, b, op: '-', ans: a - b };
+      const a = rand(1, cfg.mul), b = rand(1, cfg.mul);
+      p = { a, b, op, ans: a * b };
     }
   } while (lastProblem && p.a === lastProblem.a && p.b === lastProblem.b && p.op === lastProblem.op);
   lastProblem = p;
@@ -158,7 +169,7 @@ function solveProblems(host, { count = 5, title = '' } = {}) {
     const eq = $('.eq', host), ans = $('.answer', host), fb = $('.feedback', host), quiz = $('.quiz', host);
     const dots = $$('.dot', host);
     const render = () => {
-      eq.textContent = `${p.a} ${p.op === '+' ? '+' : '−'} ${p.b} =`;
+      eq.textContent = `${p.a} ${OP_SIGN[p.op]} ${p.b} =`;
       ans.textContent = input || '?';
       ans.classList.toggle('empty', !input);
       dots.forEach((d, k) => { d.classList.toggle('done', k < i); d.classList.toggle('current', k === i); });
@@ -189,7 +200,7 @@ function solveProblems(host, { count = 5, title = '' } = {}) {
       if (busy) return;
       if (k === 'del') input = input.slice(0, -1);
       else if (k === 'ok') { if (input) check(); return; }
-      else if (input.length < 2) input += k;
+      else if (input.length < 3) input += k;
       Sound.tap();
       render();
     };
@@ -197,7 +208,7 @@ function solveProblems(host, { count = 5, title = '' } = {}) {
       const b = e.target.closest('button');
       if (b) press(b.dataset.k);
     });
-    $('.speak', host).addEventListener('click', () => speak(`${p.a} ${p.op === '+' ? 'plus' : 'minus'} ${p.b}`));
+    $('.speak', host).addEventListener('click', () => speak(`${p.a} ${OP_WORD[p.op]} ${p.b}`));
     const onKey = (e) => {
       if (/^[0-9]$/.test(e.key)) press(e.key);
       else if (e.key === 'Backspace') press('del');
@@ -235,7 +246,7 @@ function screenChoose() {
       [{ label: 'Not yet', value: false, cls: 'grey' }, { label: `Yes, ${m.name}!`, value: true, cls: 'green' }]
     );
     if (!yes) return;
-    save = { partner: { id: m.id, level: 1, rounds: 0 }, caught: { [m.id]: 1 } };
+    save = { partner: { id: m.id, level: 1, rounds: 0 }, caught: { [m.id]: 1 }, mathLevel: save?.mathLevel || 1 };
     persist();
     Sound.win();
     confetti();
@@ -257,6 +268,7 @@ function screenHome() {
         <h1 class="logo small">Poke<span>Math</span></h1>
         <div class="top-buttons">
           <button class="btn dex-btn" data-go="dex">📖 My Pokémon <b>${caughtCount()}</b></button>
+          <button class="btn level-btn lv-${mathLevel()}" id="level">🎯 Level ${mathLevel()}</button>
           <button class="btn gear-btn" id="settings" aria-label="Settings">⚙️</button>
         </div>
       </header>
@@ -264,12 +276,12 @@ function screenHome() {
         <div class="sprite partner-sprite bob">${monSVG(m)}</div>
         <div class="partner-info">
           <div class="pname">${m.name}</div>
-          <div class="level">Level ${lvl} <span class="stars">${'★'.repeat(lvl)}<span class="off">${'★'.repeat(5 - lvl)}</span></span></div>
+          <div class="level">Rank ${lvl} <span class="stars">${'★'.repeat(lvl)}<span class="off">${'★'.repeat(5 - lvl)}</span></span></div>
           <div class="moves-label">Moves</div>
           <div class="moves">${knownMoves().map((mv) => `<span class="move-chip t-${mv.type}">${mv.name}</span>`).join('')}</div>
           ${next
             ? `<div class="next">Next move: <b>${next.name}</b></div>`
-            : `<div class="next">🏆 Max level — ${m.name} knows every move!</div>`}
+            : `<div class="next">🏆 Top rank — ${m.name} knows every move!</div>`}
         </div>
       </div>
       <div class="actions">
@@ -279,13 +291,35 @@ function screenHome() {
       </div>
     </div>`);
   $('#settings').addEventListener('click', openSettings);
+  $('#level').addEventListener('click', openLevels);
+}
+
+const caughtInLevel = (lv) => LEVEL_POKEMON[lv].filter((id) => save.caught[id]).length;
+
+async function openLevels() {
+  Sound.tap();
+  const cur = mathLevel();
+  const choice = await modal(
+    `<h2>Pick a Level</h2><p>Each level has its own math and its own Pokémon to find.</p>`,
+    [1, 2, 3, 4].map((lv) => ({
+      value: lv,
+      cls: `level-opt lv-${lv}${lv === cur ? ' current' : ''}`,
+      label: `<span class="lv-num">${lv}</span><span class="lv-text"><b>Level ${lv}: ${MATH_LEVELS[lv].label}</b><small>${caughtInLevel(lv)} of ${LEVEL_POKEMON[lv].length} Pokémon caught${lv === cur ? ' · playing now' : ''}</small></span>`,
+    })).concat([{ value: 0, cls: 'grey', label: 'Close' }])
+  );
+  if (!choice || choice === cur) return;
+  save.mathLevel = choice;
+  lastProblem = null;
+  persist();
+  Sound.levelUp();
+  screenHome();
 }
 
 async function openSettings() {
   Sound.tap();
   const choice = await modal(
     `<div class="big-emoji">⚙️</div><h2>Settings</h2>
-     <p>Reset starts the whole game over: you pick a new partner, and all levels and caught Pokémon are erased.</p>`,
+     <p>Reset starts the whole game over: you pick a new partner, and all ranks and caught Pokémon are erased.</p>`,
     [{ label: 'Close', value: 'close', cls: 'grey' }, { label: '🔄 Reset game', value: 'reset', cls: 'red' }]
   );
   if (choice !== 'reset') return;
@@ -318,7 +352,7 @@ function screenTrain() {
       panel.innerHTML = `
         <div class="center-msg">
           <div class="big-emoji">🏆</div>
-          <h2>${m.name} is at max level!</h2>
+          <h2>${m.name} is at the top rank!</h2>
           <p>${m.name} knows all 5 moves. You can still practice for fun.</p>
           <div class="btn-row"><button class="btn grey" data-go="home">Home</button><button class="btn green" id="practice">Practice</button></div>
         </div>`;
@@ -359,7 +393,7 @@ function screenTrain() {
       panel.innerHTML = `
         <div class="center-msg">
           <div class="big-emoji">🎉</div>
-          <h2>${m.name} grew to Level ${save.partner.level}!</h2>
+          <h2>${m.name} reached Rank ${save.partner.level}!</h2>
           <p>${m.name} learned <b class="t-text-${learned.type}">${learned.name}</b>!</p>
           <div class="btn-row"><button class="btn grey" data-go="home">Home</button>${save.partner.level < 5 ? '<button class="btn green" id="more">Keep training</button>' : ''}</div>
         </div>`;
@@ -373,7 +407,7 @@ function screenTrain() {
 function pickWild() {
   const ids = [];
   const weights = [];
-  for (let id = 1; id <= DEX_COUNT; id++) {
+  for (const id of LEVEL_POKEMON[mathLevel()]) {
     let w = 1;
     if (LEGENDARY.has(id)) w = 0.12;
     else if (FINAL_FORMS.has(id)) w = 0.5;
@@ -394,7 +428,7 @@ function hpBox(name, level, hp, maxHp, catchLine) {
   const pct = Math.max(0, (hp / maxHp) * 100);
   const color = pct > 50 ? 'green' : pct > 25 ? 'yellow' : 'red';
   return `
-    <div class="hp-name"><span>${name}</span><span class="hp-lv">Lv ${level}</span></div>
+    <div class="hp-name"><span>${name}</span><span class="hp-lv">${'★'.repeat(level)}</span></div>
     <div class="hp-bar"><div class="hp-fill ${color}" style="width:${pct}%"></div>${catchLine ? `<div class="catch-line" style="left:${(20 / maxHp) * 100}%"></div>` : ''}</div>
     <div class="hp-num">${Math.max(0, hp)} / ${maxHp} HP</div>`;
 }
@@ -662,8 +696,8 @@ function screenBattle() {
   const n = save.partner.level >= 3 ? 2 : 1;
   const foes = [];
   while (foes.length < n) {
-    const mon = DEX[rand(1, DEX_COUNT)];
-    if (LEGENDARY.has(mon.id) || foes.some((f) => f.mon.id === mon.id)) continue;
+    const mon = DEX[pick(LEVEL_POKEMON[mathLevel()])];
+    if (foes.some((f) => f.mon.id === mon.id)) continue;
     foes.push(makeFoe(mon));
   }
   runBattle({ mode: 'trainer', foes, trainer: pick(TRAINER_NAMES) });
@@ -675,10 +709,15 @@ function screenDex() {
     <div class="screen dex">
       ${topbar(`My Pokémon — ${caughtCount()} of ${DEX_COUNT}`)}
       <div class="dex-progress"><div style="width:${(caughtCount() / DEX_COUNT) * 100}%"></div></div>
+      <div class="dex-tabs">
+        <button class="dex-tab" data-lv="0">All</button>
+        ${[1, 2, 3, 4].map((lv) => `<button class="dex-tab lv-${lv}" data-lv="${lv}">Level ${lv} <small>${caughtInLevel(lv)}/${LEVEL_POKEMON[lv].length}</small></button>`).join('')}
+      </div>
       <div class="dex-grid">
         ${Array.from({ length: DEX_COUNT }, (_, k) => {
           const m = DEX[k + 1], n = save.caught[m.id];
-          return `<button class="dex-cell ${n ? 'have' : 'missing'}" data-id="${m.id}" ${n ? '' : 'disabled'}>
+          return `<button class="dex-cell ${n ? 'have' : 'missing'}" data-id="${m.id}" data-lv="${LEVEL_OF[m.id]}" ${n ? '' : 'disabled'}>
+            <span class="dex-lv lv-${LEVEL_OF[m.id]}">${LEVEL_OF[m.id]}</span>
             <span class="dex-no">#${String(m.id).padStart(3, '0')}</span>
             ${m.id === save.partner.id ? '<span class="dex-star">⭐</span>' : n > 1 ? `<span class="dex-count">×${n}</span>` : ''}
             <div class="sprite">${monSVG(m)}</div>
@@ -687,6 +726,15 @@ function screenDex() {
         }).join('')}
       </div>
     </div>`);
+  const filter = (lv) => {
+    $$('.dex-tab').forEach((t) => t.classList.toggle('on', +t.dataset.lv === lv));
+    $$('.dex-cell').forEach((cell) => { cell.hidden = lv && +cell.dataset.lv !== lv; });
+  };
+  $('.dex-tabs').addEventListener('click', (e) => {
+    const t = e.target.closest('.dex-tab');
+    if (t) { Sound.tap(); filter(+t.dataset.lv); }
+  });
+  filter(mathLevel());
   $('.dex-grid').addEventListener('click', (e) => {
     const c = e.target.closest('.dex-cell.have');
     if (!c) return;
@@ -694,7 +742,8 @@ function screenDex() {
     const m = DEX[+c.dataset.id];
     modal(`<div class="sprite modal-sprite bob">${monSVG(m)}</div><h2>${m.name}</h2>
       <div class="pill-row">${m.types.map((t) => `<span class="type-pill t-${t}">${TYPE_LABEL[t]}</span>`).join('')}</div>
-      <p>${m.id === save.partner.id ? 'Your partner! ⭐' : `You have caught ${save.caught[m.id]}.`}</p>`, [{ label: 'Close', value: 1, cls: 'green' }]);
+      <p>${m.id === save.partner.id ? 'Your partner! ⭐' : `You have caught ${save.caught[m.id]}.`}</p>
+      <p>Found in Level ${LEVEL_OF[m.id]}</p>`, [{ label: 'Close', value: 1, cls: 'green' }]);
   });
 }
 
