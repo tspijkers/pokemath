@@ -32,11 +32,13 @@ const LEVEL_POKEMON = {
     83, 95, 106, 107, 108, 113, 114, 115, 122, 123, 124, 125, 126, 127, 128, 131, 137, 142,
     12, 15, 20, 22, 24, 28, 36, 40, 42, 47, 49, 51, 53, 57, 85, 119],
   // 30: tougher final forms + legendary birds
-  3: [18, 38, 45, 55, 62, 71, 73, 78, 80, 82, 87, 89, 91, 97, 99, 101, 103, 105, 110, 112, 117, 121, 134, 135, 136, 139, 141,
-    144, 145, 146],
+  3: [18, 38, 45, 55, 62, 71, 73, 78, 80, 82, 87, 89, 91, 97, 99, 101, 103, 105, 110, 112, 117, 121, 134, 135, 136, 139, 141],
   // 16: Mew, Mewtwo and the strongest final evolutions
   4: [151, 150, 3, 6, 9, 149, 130, 65, 94, 68, 76, 59, 143, 26, 34, 31],
+  // Legendary Pokémon: only won in PokeRead tournaments (not catchable in PokeMath)
+  5: [145, 146, 144],
 };
+const LEGENDARY_GROUP = 5;
 const LEVEL_OF = {};
 for (const [lv, ids] of Object.entries(LEVEL_POKEMON)) ids.forEach((id) => (LEVEL_OF[id] = +lv));
 
@@ -108,7 +110,7 @@ function movesFor(id) {
   return (_moveCache[id] = list);
 }
 // Pokémon from higher Level groups are a bit stronger (HP and hit power).
-const GROUP_BONUS = { 1: 1, 2: 1.06, 3: 1.12, 4: 1.2 };
+const GROUP_BONUS = { 1: 1, 2: 1.06, 3: 1.12, 4: 1.2, 5: 1.25 };
 
 // What wild / trainer Pokémon use when they fight back
 const FOE_MOVE = {
