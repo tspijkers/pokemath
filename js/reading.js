@@ -590,7 +590,9 @@ function screenReading(r) {
 // ---------- shared helpers ----------
 const shuffle = (a) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 const conflicts = (a, b) => PIC_CONFLICTS.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
-const sayWord = (w) => speak(w);
+// Reading words are spoken slowly so a kindergartner can hear each sound; the 🐢 button is extra slow.
+const READ_RATE = 0.55, SLOW_RATE = 0.3;
+const sayWord = (w, slow = false) => speak(w, slow ? SLOW_RATE : READ_RATE);
 function wordsUpTo(r) { return JOURNEYS.slice(0, r + 1).flatMap((j) => j.words); }
 const readTop = (title) => `<header class="topbar"><button class="home-btn" data-go="reading" aria-label="Map">🗺️</button><div class="topbar-title">${title}</div><div class="topbar-spacer"></div></header>`;
 const wordBig = (w) => `<div class="read-word">${w}</div>`;
@@ -630,10 +632,11 @@ function learnWords(panel, words, tok) {
             <div class="dots">${words.map((_, k) => `<span class="dot${k < i ? ' done' : k === i ? ' current' : ''}"></span>`).join('')}</div></div>
           ${wordBig(w)}
           ${hasPic(w) ? `<div class="learn-pic">${picSVG(w)}</div>` : ''}
-          <div class="btn-row"><button class="btn blue big" id="hear">🔊 Hear it</button><button class="btn green big" id="nextw">${i < words.length - 1 ? 'Next ▶' : "Let's read! ▶"}</button></div>
+          <div class="btn-row"><button class="btn blue big" id="hear">🔊 Hear it</button><button class="btn blue big slow-btn" id="hear-slow" aria-label="Say it slowly">🐢 Slow</button><button class="btn green big" id="nextw">${i < words.length - 1 ? 'Next ▶' : "Let's read! ▶"}</button></div>
         </div>`;
       sayWord(w);
       $('#hear', panel).onclick = () => { Sound.tap(); sayWord(w); };
+      $('#hear-slow', panel).onclick = () => { Sound.tap(); sayWord(w, true); };
       $('#nextw', panel).onclick = () => {
         Sound.tap();
         if (!alive(tok)) return;
@@ -661,13 +664,17 @@ function wordQuiz(panel, words, pool, title, tok, onProgress, onAnswer) {
           <div class="quiz-head"><div class="quiz-title">${title}</div><div class="rq-count">${doneCount} / ${words.length} ✓</div></div>
           ${type === 'pic'
             ? `<div class="rq-prompt">Read the word. Tap its picture!</div>${wordBig(w)}`
-            : `<div class="rq-prompt">Listen, then tap the word!</div><button class="btn blue big rq-listen">🔊 Hear it</button>`}
+            : `<div class="rq-prompt">Listen, then tap the word!</div><div class="btn-row"><button class="btn blue big rq-listen">🔊 Hear it</button><button class="btn blue big slow-btn rq-slow" aria-label="Say it slowly">🐢 Slow</button></div>`}
           <div class="rq-options ${type}">
             ${opts.map((o) => `<button class="rq-opt" data-w="${o}">${type === 'pic' ? picSVG(o) : o}</button>`).join('')}
           </div>
           <div class="feedback">&nbsp;</div>
         </div>`;
-      if (type === 'listen') { sayWord(w); $('.rq-listen', panel).onclick = () => { Sound.tap(); sayWord(w); }; }
+      if (type === 'listen') {
+        sayWord(w);
+        $('.rq-listen', panel).onclick = () => { Sound.tap(); sayWord(w); };
+        $('.rq-slow', panel).onclick = () => { Sound.tap(); sayWord(w, true); };
+      }
       const box = $('.rq', panel), fb = $('.feedback', panel);
       $('.rq-options', panel).addEventListener('click', (e) => {
         const b = e.target.closest('.rq-opt');
