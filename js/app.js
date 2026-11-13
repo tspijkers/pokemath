@@ -12,16 +12,30 @@ let save = loadSave();
 function loadSave() {
   try {
     const s = JSON.parse(localStorage.getItem(SAVE_KEY));
-    if (s && s.partner && DEX[s.partner.id]) return s;
+    if (s && s.partner && DEX[s.partner.id]) return upgradeSave(s);
   } catch (e) {}
   return null;
+}
+// Older saves only tracked the partner's rank. Give every caught Pokémon its own.
+function upgradeSave(s) {
+  if (!s.team) {
+    s.team = {};
+    for (const id of Object.keys(s.caught)) s.team[id] = { rank: 1, rounds: 0 };
+    s.team[s.partner.id] = { rank: s.partner.level || 1, rounds: 0 };
+  }
+  for (const id of Object.keys(s.caught)) { s.caught[id] = 1; if (!s.team[id]) s.team[id] = { rank: 1, rounds: 0 }; }
+  if (!s.active || !s.team[s.active]) s.active = s.partner.id;
+  return s;
 }
 function persist() {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
 }
 const caughtCount = () => Object.keys(save.caught).length;
-const partnerMon = () => DEX[save.partner.id];
-const knownMoves = () => PARTNER_MOVES[save.partner.id].slice(0, save.partner.level);
+// The Pokémon he's currently using for Train / Catch / Battle
+const partnerMon = () => DEX[save.active];
+const activeRank = () => save.team[save.active].rank;
+const knownMoves = () => movesFor(save.active).slice(0, activeRank());
+const groupBonus = (id) => GROUP_BONUS[LEVEL_OF[id]] || 1;
 
 // ---------- sound & voice ----------
 const Sound = {
@@ -246,7 +260,7 @@ function screenChoose() {
       [{ label: 'Not yet', value: false, cls: 'grey' }, { label: `Yes, ${m.name}!`, value: true, cls: 'green' }]
     );
     if (!yes) return;
-    save = { partner: { id: m.id, level: 1, rounds: 0 }, caught: { [m.id]: 1 }, mathLevel: save?.mathLevel || 1 };
+    save = { partner: { id: m.id }, caught: { [m.id]: 1 }, team: { [m.id]: { rank: 1, rounds: 0 } }, active: m.id, mathLevel: save?.mathLevel || 1 };
     persist();
     Sound.win();
     confetti();
@@ -260,8 +274,8 @@ function roundDots(n) {
 }
 function screenHome() {
   if (!save) return screenChoose();
-  const m = partnerMon(), lvl = save.partner.level;
-  const next = PARTNER_MOVES[m.id][lvl];
+  const m = partnerMon(), lvl = activeRank();
+  const next = movesFor(m.id)[lvl];
   show(`
     <div class="screen home">
       <header class="home-top">
@@ -275,13 +289,14 @@ function screenHome() {
       <div class="partner-card">
         <div class="sprite partner-sprite bob">${monSVG(m)}</div>
         <div class="partner-info">
-          <div class="pname">${m.name}</div>
+          <div class="pname">${m.name}${m.id === save.partner.id ? ' <span class="partner-star" title="Your first partner">⭐</span>' : ''}</div>
           <div class="level">Rank ${lvl} <span class="stars">${'★'.repeat(lvl)}<span class="off">${'★'.repeat(5 - lvl)}</span></span></div>
           <div class="moves-label">Moves</div>
           <div class="moves">${knownMoves().map((mv) => `<span class="move-chip t-${mv.type}">${mv.name}</span>`).join('')}</div>
           ${next
             ? `<div class="next">Next move: <b>${next.name}</b></div>`
             : `<div class="next">🏆 Top rank — ${m.name} knows every move!</div>`}
+          ${caughtCount() > 1 ? '<button class="btn blue switch-btn" id="switch">🔄 Switch Pokémon</button>' : ''}
         </div>
       </div>
       <div class="actions">
@@ -292,6 +307,15 @@ function screenHome() {
     </div>`);
   $('#settings').addEventListener('click', openSettings);
   $('#level').addEventListener('click', openLevels);
+  $('#switch')?.addEventListener('click', () => { Sound.tap(); screenDex(true); });
+}
+
+// Make a caught Pokémon the one used for Train / Catch / Battle
+function useMon(id) {
+  save.active = id;
+  persist();
+  Sound.levelUp();
+  screenHome();
 }
 
 const caughtInLevel = (lv) => LEVEL_POKEMON[lv].filter((id) => save.caught[id]).length;
@@ -347,7 +371,7 @@ function screenTrain() {
   const m = partnerMon();
 
   const intro = () => {
-    const lvl = save.partner.level;
+    const me = save.team[m.id], lvl = me.rank;
     if (lvl >= 5) {
       panel.innerHTML = `
         <div class="center-msg">
@@ -367,7 +391,7 @@ function screenTrain() {
       };
       return;
     }
-    const next = PARTNER_MOVES[m.id][lvl];
+    const next = movesFor(m.id)[lvl];
     panel.innerHTML = `
       <div class="center-msg">
         <p class="kicker">Learning a new move</p>
@@ -379,13 +403,13 @@ function screenTrain() {
   };
 
   const runRound = async () => {
-    const next = PARTNER_MOVES[m.id][save.partner.level];
+    const me = save.team[m.id], next = movesFor(m.id)[me.rank];
     await solveProblems(panel, { count: TRAIN_PROBLEMS, title: `Learning <b class="t-text-${next.type}">${next.name}</b>` });
     if (!alive(tok)) return;
     {
       const learned = next;
-      save.partner.level++;
-      save.partner.rounds = 0;
+      me.rank++;
+      me.rounds = 0;
       persist();
       Sound.levelUp();
       confetti();
@@ -393,9 +417,9 @@ function screenTrain() {
       panel.innerHTML = `
         <div class="center-msg">
           <div class="big-emoji">🎉</div>
-          <h2>${m.name} reached Rank ${save.partner.level}!</h2>
+          <h2>${m.name} reached Rank ${me.rank}!</h2>
           <p>${m.name} learned <b class="t-text-${learned.type}">${learned.name}</b>!</p>
-          <div class="btn-row"><button class="btn grey" data-go="home">Home</button>${save.partner.level < 5 ? '<button class="btn green" id="more">Keep training</button>' : ''}</div>
+          <div class="btn-row"><button class="btn grey" data-go="home">Home</button>${me.rank < 5 ? '<button class="btn green" id="more">Keep training</button>' : ''}</div>
         </div>`;
       $('#more')?.addEventListener('click', () => { Sound.tap(); intro(); });
     }
@@ -408,18 +432,19 @@ function pickWild() {
   const ids = [];
   const weights = [];
   for (const id of LEVEL_POKEMON[mathLevel()]) {
+    if (save.caught[id]) continue; // no double catches
     let w = 1;
     if (LEGENDARY.has(id)) w = 0.12;
     else if (FINAL_FORMS.has(id)) w = 0.5;
-    if (!save.caught[id]) w *= 2.5;
     ids.push(id); weights.push(w);
   }
+  if (!ids.length) return null;
   let total = weights.reduce((a, b) => a + b, 0), x = Math.random() * total;
   for (let i = 0; i < ids.length; i++) { x -= weights[i]; if (x <= 0) return DEX[ids[i]]; }
   return DEX[ids[0]];
 }
 function makeFoe(mon) {
-  const L = save.partner.level;
+  const L = activeRank();
   const maxHp = 50 + 10 * L + rand(0, 10);
   return { mon, level: Math.max(1, Math.min(5, L + rand(-1, 1))), maxHp, hp: maxHp };
 }
@@ -500,7 +525,8 @@ async function runBattle(cfg) {
   const panel = $('.panel'), foeSide = $('.foe-side'), allySide = $('.ally-side');
   const foeSprite = $('.foe-sprite'), allySprite = $('.ally-sprite');
   const pm = partnerMon();
-  const ally = { maxHp: 70 + 10 * save.partner.level };
+  const bonus = groupBonus(pm.id);
+  const ally = { maxHp: Math.round((70 + 10 * activeRank()) * bonus) };
   ally.hp = ally.maxHp;
   const foes = cfg.foes.map((f) => ({ ...f, hp: f.maxHp }));
   let fi = 0;
@@ -510,7 +536,7 @@ async function runBattle(cfg) {
     $('.foe-hp').innerHTML = hpBox(foe().mon.name, foe().level, foe().hp, foe().maxHp, isWild);
     $('.foe-hp').classList.toggle('catchable', isWild && foe().hp < 20);
   };
-  const drawAlly = () => { $('.ally-hp').innerHTML = hpBox(pm.name, save.partner.level, ally.hp, ally.maxHp, false); };
+  const drawAlly = () => { $('.ally-hp').innerHTML = hpBox(pm.name, activeRank(), ally.hp, ally.maxHp, false); };
   const setFoeSprite = () => { foeSprite.innerHTML = monSVG(foe().mon); foeSprite.className = 'sprite foe-sprite enter-right'; };
 
   allySprite.innerHTML = monSVG(pm);
@@ -556,7 +582,7 @@ async function runBattle(cfg) {
     Sound.hit();
     burst(foeSide, move.type);
     retrigger(foeSprite, 'hit');
-    let dmg = move.power + rand(-2, 2);
+    let dmg = Math.round(move.power * bonus) + rand(-2, 2);
     const before = foe().hp;
     foe().hp -= dmg;
     if (isWild) foe().hp = Math.max(foe().hp, Math.min(before, rand(4, 9))); // wild Pokémon never faint, so they can be caught
@@ -649,16 +675,18 @@ async function runBattle(cfg) {
     ball.classList.add('caught');
     Sound.win();
     confetti();
-    const already = !!save.caught[m.id];
-    save.caught[m.id] = (save.caught[m.id] || 0) + 1;
+    save.caught[m.id] = 1;
+    save.team[m.id] = { rank: 1, rounds: 0 };
     persist();
+    const left = LEVEL_POKEMON[mathLevel()].filter((id) => !save.caught[id]).length;
     panel.innerHTML = `
       <div class="center-msg">
         <div class="sprite modal-sprite bob">${monSVG(m)}</div>
         <h2>Gotcha! ${m.name} was caught!</h2>
-        <p>${already ? `You now have ${save.caught[m.id]} ${m.name}!` : `${m.name} was added to your collection. 📖`}</p>
-        <div class="btn-row"><button class="btn grey" data-go="home">Home</button><button class="btn blue" data-go="dex">My Pokémon</button><button class="btn green" data-go="catch">Catch more</button></div>
+        <p>${m.name} joined your team at Rank 1. ${left ? `${left} more to find in Level ${mathLevel()}!` : `That was the last one in Level ${mathLevel()}! 🏆`}</p>
+        <div class="btn-row"><button class="btn grey" data-go="home">Home</button><button class="btn blue" id="use-new">Use ${m.name}</button>${left ? '<button class="btn green" data-go="catch">Catch more</button>' : ''}</div>
       </div>`;
+    $('#use-new').onclick = () => useMon(m.id);
   }
 
   function battleWon() {
@@ -689,11 +717,27 @@ async function runBattle(cfg) {
 }
 
 function screenCatch() {
-  runBattle({ mode: 'wild', foes: [makeFoe(pickWild())] });
+  const mon = pickWild();
+  if (mon) return runBattle({ mode: 'wild', foes: [makeFoe(mon)] });
+  // every Pokémon in this Level is caught
+  const lv = mathLevel(), nextLv = [1, 2, 3, 4].find((l) => l !== lv && caughtInLevel(l) < LEVEL_POKEMON[l].length);
+  show(`
+    <div class="screen">
+      ${topbar('Catch')}
+      <div class="card panel"><div class="center-msg">
+        <div class="big-emoji">🏆</div>
+        <h2>You caught all ${LEVEL_POKEMON[lv].length} Level ${lv} Pokémon!</h2>
+        <p>${nextLv ? `Amazing! Try Level ${nextLv} to find new Pokémon.` : 'You caught every single Pokémon. You are a Pokémon Master!'}</p>
+        <div class="btn-row"><button class="btn grey" data-go="home">Home</button>${nextLv ? '<button class="btn green" id="pick-level">Pick a Level</button>' : ''}</div>
+      </div></div>
+    </div>`);
+  Sound.win();
+  confetti();
+  $('#pick-level')?.addEventListener('click', openLevels);
 }
 
 function screenBattle() {
-  const n = save.partner.level >= 3 ? 2 : 1;
+  const n = activeRank() >= 3 ? 2 : 1;
   const foes = [];
   while (foes.length < n) {
     const mon = DEX[pick(LEVEL_POKEMON[mathLevel()])];
@@ -704,10 +748,10 @@ function screenBattle() {
 }
 
 // ---------- collection ----------
-function screenDex() {
+function screenDex(picking = false) {
   show(`
-    <div class="screen dex">
-      ${topbar(`My Pokémon — ${caughtCount()} of ${DEX_COUNT}`)}
+    <div class="screen dex${picking ? ' picking' : ''}">
+      ${topbar(picking ? 'Who do you want to use?' : `My Pokémon — ${caughtCount()} of ${DEX_COUNT}`)}
       <div class="dex-progress"><div style="width:${(caughtCount() / DEX_COUNT) * 100}%"></div></div>
       <div class="dex-tabs">
         <button class="dex-tab" data-lv="0">All</button>
@@ -719,31 +763,37 @@ function screenDex() {
           return `<button class="dex-cell ${n ? 'have' : 'missing'}" data-id="${m.id}" data-lv="${LEVEL_OF[m.id]}" ${n ? '' : 'disabled'}>
             <span class="dex-lv lv-${LEVEL_OF[m.id]}">${LEVEL_OF[m.id]}</span>
             <span class="dex-no">#${String(m.id).padStart(3, '0')}</span>
-            ${m.id === save.partner.id ? '<span class="dex-star">⭐</span>' : n > 1 ? `<span class="dex-count">×${n}</span>` : ''}
+            ${m.id === save.partner.id ? '<span class="dex-star">⭐</span>' : ''}
+            ${m.id === save.active ? '<span class="dex-using">Using</span>' : ''}
             <div class="sprite">${monSVG(m)}</div>
             <span class="dex-name">${n ? m.name : '???'}</span>
+            ${n ? `<span class="dex-rank">${'★'.repeat(save.team[m.id].rank)}</span>` : ''}
           </button>`;
         }).join('')}
       </div>
     </div>`);
   const filter = (lv) => {
     $$('.dex-tab').forEach((t) => t.classList.toggle('on', +t.dataset.lv === lv));
-    $$('.dex-cell').forEach((cell) => { cell.hidden = lv && +cell.dataset.lv !== lv; });
+    $$('.dex-cell').forEach((cell) => { cell.hidden = (lv && +cell.dataset.lv !== lv) || (picking && cell.classList.contains('missing')); });
   };
   $('.dex-tabs').addEventListener('click', (e) => {
     const t = e.target.closest('.dex-tab');
     if (t) { Sound.tap(); filter(+t.dataset.lv); }
   });
-  filter(mathLevel());
-  $('.dex-grid').addEventListener('click', (e) => {
+  filter(picking ? 0 : mathLevel());
+  $('.dex-grid').addEventListener('click', async (e) => {
     const c = e.target.closest('.dex-cell.have');
     if (!c) return;
     Sound.tap();
-    const m = DEX[+c.dataset.id];
-    modal(`<div class="sprite modal-sprite bob">${monSVG(m)}</div><h2>${m.name}</h2>
+    const m = DEX[+c.dataset.id], me = save.team[m.id], using = m.id === save.active;
+    const moves = movesFor(m.id);
+    const go = await modal(`<div class="sprite modal-sprite bob">${monSVG(m)}</div><h2>${m.name}${m.id === save.partner.id ? ' ⭐' : ''}</h2>
       <div class="pill-row">${m.types.map((t) => `<span class="type-pill t-${t}">${TYPE_LABEL[t]}</span>`).join('')}</div>
-      <p>${m.id === save.partner.id ? 'Your partner! ⭐' : `You have caught ${save.caught[m.id]}.`}</p>
-      <p>Found in Level ${LEVEL_OF[m.id]}</p>`, [{ label: 'Close', value: 1, cls: 'green' }]);
+      <p>Rank ${me.rank} <span class="stars">${'★'.repeat(me.rank)}<span class="off">${'★'.repeat(5 - me.rank)}</span></span> · Found in Level ${LEVEL_OF[m.id]}</p>
+      <div class="moves modal-moves">${moves.map((mv, i) => `<span class="move-chip t-${mv.type}${i < me.rank ? '' : ' locked'}">${i < me.rank ? '' : '🔒 '}${mv.name}</span>`).join('')}</div>`,
+      using ? [{ label: 'Close', value: 0, cls: 'grey' }, { label: '✅ Using now', value: 0, cls: 'green' }]
+            : [{ label: 'Close', value: 0, cls: 'grey' }, { label: `Use ${m.name}`, value: 1, cls: 'green' }]);
+    if (go) useMon(m.id);
   });
 }
 
