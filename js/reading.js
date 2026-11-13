@@ -1,30 +1,62 @@
 // reading.js — Reading journeys: 5 regions × (4 stops of 5 words + a gym with all 20).
 // Kindergarten words: Dolch pre-primer & primer sight words plus a few picture nouns.
 
+// Maps are drawn in a 240×100 box. Each region's land is shaped like the real place it is based on
+// (simplified): Kanto = Kantō, Johto = Kansai, Hoenn = Kyūshū, Sinnoh = Hokkaidō, Kalos = France.
 const JOURNEYS = [
   {
-    name: 'Kanto', color: '#22c55e', bg: ['#d4f5c4', '#8fd97a'], decor: '🌳', leader: 'Papa', badge: 'Leaf Badge', shape: 'leaf',
+    name: 'Kanto', color: '#22c55e', land: '#a6e08f', decor: '🌳', leader: 'Papa',
+    badge: 'Fire Badge', shape: 'fire', badgeColor: '#f97316',
     stops: ['Sunny Path', 'Berry Woods', 'Pebble Bridge', 'Windy Hill'],
+    outline: [[40, 12], [90, 6], [150, 8], [196, 10], [206, 30], [204, 46], [214, 60], [204, 66], [196, 80], [186, 92], [170, 96], [164, 84], [160, 70], [150, 62], [140, 64], [138, 76], [130, 90], [124, 80], [114, 80], [100, 80], [88, 78], [86, 92], [80, 98], [70, 94], [72, 80], [56, 74], [40, 68], [30, 50], [32, 28]],
+    islands: [],
+    lakes: [],
+    nodes: [[56, 46], [94, 28], [132, 40], [176, 30], [184, 76]],
+    decorAt: [[44, 26], [70, 60], [118, 20], [160, 22], [150, 50], [196, 52], [110, 62]],
     words: ['a', 'I', 'the', 'see', 'cat', 'can', 'go', 'is', 'dog', 'red', 'it', 'up', 'my', 'sun', 'big', 'we', 'to', 'and', 'run', 'one'],
   },
   {
-    name: 'Johto', color: '#f97316', bg: ['#ffe6c7', '#f6b26b'], decor: '🍁', leader: 'Mama', badge: 'Star Badge', shape: 'star',
+    name: 'Johto', color: '#f97316', land: '#f4c98a', decor: '🍁', leader: 'Mama',
+    badge: 'Water Badge', shape: 'water', badgeColor: '#0ea5e9',
     stops: ['Maple Trail', 'Lantern Lane', 'Lake Shore', 'Old Bridge'],
+    outline: [[58, 14], [96, 8], [130, 12], [170, 6], [184, 20], [180, 42], [174, 58], [168, 72], [156, 86], [140, 96], [128, 88], [118, 74], [112, 60], [104, 52], [92, 50], [78, 48], [62, 46], [52, 32]],
+    islands: [[[98, 62], [106, 58], [108, 70], [100, 74]]],
+    lakes: [[150, 32, 6, 12]],
+    nodes: [[70, 30], [104, 24], [128, 44], [166, 50], [148, 78]],
+    decorAt: [[62, 20], [86, 40], [120, 18], [168, 22], [140, 60], [160, 64], [116, 34]],
     words: ['in', 'me', 'you', 'ball', 'look', 'two', 'here', 'said', 'car', 'not', 'down', 'blue', 'play', 'like', 'jump', 'little', 'yes', 'no', 'help', 'come'],
   },
   {
-    name: 'Hoenn', color: '#0ea5e9', bg: ['#cdefff', '#7cc8f0'], decor: '🌴', leader: 'Opa', badge: 'Wave Badge', shape: 'drop',
+    name: 'Hoenn', color: '#0ea5e9', land: '#b7e889', decor: '🌴', leader: 'Opa',
+    badge: 'Electric Badge', shape: 'electric', badgeColor: '#eab308',
     stops: ['Sandy Beach', 'Palm Grove', 'Coral Bay', 'Volcano Trail'],
+    outline: [[96, 10], [116, 4], [140, 8], [152, 20], [158, 40], [158, 60], [150, 80], [140, 94], [132, 84], [130, 76], [124, 84], [120, 96], [108, 86], [106, 66], [96, 62], [86, 58], [78, 48], [88, 40], [82, 26], [90, 20]],
+    islands: [[[170, 86], [178, 82], [182, 90], [174, 94]], [[60, 30], [66, 26], [70, 34], [62, 38]]],
+    lakes: [],
+    nodes: [[100, 24], [134, 18], [148, 46], [118, 54], [140, 70]],
+    decorAt: [[118, 14], [92, 48], [146, 30], [130, 40], [112, 72], [150, 62], [104, 34]],
     words: ['he', 'she', 'hat', 'was', 'for', 'have', 'fish', 'they', 'this', 'eat', 'what', 'are', 'bed', 'all', 'at', 'yellow', 'on', 'three', 'under', 'make'],
   },
   {
-    name: 'Sinnoh', color: '#6366f1', bg: ['#eef2ff', '#b9c4f5'], decor: '❄️', leader: 'Oma', badge: 'Ice Badge', shape: 'diamond',
+    name: 'Sinnoh', color: '#6366f1', land: '#eef2f8', decor: '🌲', leader: 'Oma',
+    badge: 'Rock Badge', shape: 'rock', badgeColor: '#a8956a',
     stops: ['Snowy Path', 'Pine Forest', 'Frozen Lake', 'Crystal Cave'],
+    outline: [[140, 4], [152, 10], [168, 22], [186, 32], [204, 22], [200, 36], [212, 46], [222, 50], [210, 56], [190, 58], [172, 66], [156, 82], [148, 74], [136, 62], [124, 64], [112, 74], [104, 88], [94, 96], [88, 86], [98, 72], [104, 58], [98, 46], [108, 40], [120, 30], [130, 14]],
+    islands: [],
+    lakes: [],
+    nodes: [[114, 48], [140, 24], [168, 38], [196, 48], [152, 62]],
+    decorAt: [[128, 34], [150, 44], [180, 46], [136, 54], [104, 78], [160, 28], [120, 60]],
     words: ['do', 'did', 'get', 'ride', 'saw', 'so', 'be', 'brown', 'but', 'out', 'there', 'four', 'with', 'went', 'want', 'good', 'new', 'now', 'away', 'find'],
   },
   {
-    name: 'Kalos', color: '#ec4899', bg: ['#ffe1f0', '#f4a6cc'], decor: '🌸', leader: 'Lucy', badge: 'Flower Badge', shape: 'flower',
+    name: 'Kalos', color: '#ec4899', land: '#cdeaa6', decor: '🌸', leader: 'Lucy',
+    badge: 'Psychic Badge', shape: 'psychic', badgeColor: '#a855f7',
     stops: ['Flower Field', 'Castle Road', 'Rainbow Bridge', 'Starry Hill'],
+    outline: [[118, 4], [134, 10], [152, 18], [168, 26], [162, 40], [160, 52], [168, 68], [158, 84], [140, 82], [130, 88], [118, 94], [100, 90], [102, 74], [100, 62], [92, 50], [78, 44], [64, 40], [70, 32], [88, 30], [96, 22], [106, 18]],
+    islands: [[[178, 78], [184, 76], [186, 90], [180, 94]]],
+    lakes: [],
+    nodes: [[76, 38], [110, 26], [140, 34], [126, 60], [148, 74]],
+    decorAt: [[124, 16], [96, 40], [150, 50], [112, 76], [134, 46], [90, 60], [156, 30]],
     words: ['where', 'who', 'white', 'that', 'into', 'our', 'funny', 'please', 'pretty', 'ran', 'black', 'ate', 'came', 'must', 'soon', 'too', 'well', 'will', 'am', 'say'],
   },
 ];
@@ -106,12 +138,69 @@ const picSVG = (w) => `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/
 function badgeSVG(shape, color, size = '') {
   const light = shade(color, 22), dark = shade(color, -18);
   let body = '';
-  if (shape === 'leaf') body = `<path d="M50 8 C82 22 86 62 50 92 C14 62 18 22 50 8 Z" fill="${color}" ${SK}/><path d="M50 18 L50 84 M50 40 L36 30 M50 40 L64 30 M50 58 L34 48 M50 58 L66 48" stroke="${dark}" stroke-width="3" stroke-linecap="round"/>`;
-  else if (shape === 'star') { const p = []; for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2 - Math.PI / 2, r = i % 2 ? 20 : 44; p.push(`${50 + Math.cos(a) * r},${52 + Math.sin(a) * r}`); } body = `<polygon points="${p.join(' ')}" fill="${color}" ${SK}/><circle cx="50" cy="52" r="10" fill="${light}" ${SK}/>`; }
-  else if (shape === 'drop') body = `<path d="M50 6 C66 32 82 48 82 64 A32 32 0 0 1 18 64 C18 48 34 32 50 6 Z" fill="${color}" ${SK}/><path d="M30 66 Q40 56 50 66 Q60 76 70 66" fill="none" stroke="${light}" stroke-width="5" stroke-linecap="round"/>`;
-  else if (shape === 'diamond') body = `<path d="M50 6 L86 40 L50 94 L14 40 Z" fill="${color}" ${SK}/><path d="M14 40 L86 40 M50 6 L36 40 L50 94 L64 40 Z" fill="${light}" fill-opacity=".5" ${SK}/>`;
-  else body = [0, 1, 2, 3, 4].map((i) => { const a = (i / 5) * Math.PI * 2 - Math.PI / 2; return `<circle cx="${50 + Math.cos(a) * 24}" cy="${52 + Math.sin(a) * 24}" r="20" fill="${color}" ${SK}/>`; }).join('') + `<circle cx="50" cy="52" r="14" fill="#facc15" ${SK}/>`;
+  if (shape === 'fire') body = `<path d="M50 6 C60 26 80 34 78 60 A28 28 0 0 1 22 60 C20 44 32 36 34 22 C40 32 44 34 46 38 C48 26 46 16 50 6 Z" fill="${color}" ${SK}/><path d="M50 46 C56 56 64 60 62 72 A12 12 0 0 1 38 72 C38 62 46 58 50 46 Z" fill="#fde047" ${SK}/>`;
+  else if (shape === 'water') body = `<path d="M50 6 C66 32 82 48 82 64 A32 32 0 0 1 18 64 C18 48 34 32 50 6 Z" fill="${color}" ${SK}/><path d="M30 66 Q40 56 50 66 Q60 76 70 66" fill="none" stroke="${light}" stroke-width="5" stroke-linecap="round"/>`;
+  else if (shape === 'electric') body = `<path d="M58 4 L22 54 L46 54 L36 96 L78 40 L54 40 Z" fill="${color}" ${SK}/><path d="M54 16 L34 48" stroke="${light}" stroke-width="4" stroke-linecap="round"/>`;
+  else if (shape === 'rock') body = `<path d="M20 70 L14 44 L30 22 L58 12 L80 26 L90 52 L80 80 L52 90 L30 86 Z" fill="${color}" ${SK}/><path d="M40 30 L50 48 L44 64 M62 44 L74 56 M30 60 L40 70" fill="none" stroke="${dark}" stroke-width="3.5" stroke-linecap="round"/>`;
+  else {
+    let d = '';
+    for (let t = 0; t <= Math.PI * 4.2; t += 0.2) { const r = 4 + t * 2.6, x = 50 + Math.cos(t) * r, y = 50 + Math.sin(t) * r; d += (d ? ' L' : 'M') + `${x.toFixed(1)} ${y.toFixed(1)}`; }
+    body = `<circle cx="50" cy="50" r="42" fill="${color}" ${SK}/><path d="${d}" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>`;
+  }
   return `<svg class="badge-svg ${size}" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${body}<ellipse cx="36" cy="30" rx="8" ry="5" fill="#fff" opacity=".45" transform="rotate(-30 36 30)"/></svg>`;
+}
+
+// The young adventurer who walks the reading journey (an original character).
+function heroSVG() {
+  const skin = '#f9d9bd', hair = '#f6d158', hairD = '#d9a92e';
+  return `<svg viewBox="${VIEWBOX}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Adventurer">
+    <ellipse cx="100" cy="192" rx="44" ry="7" fill="rgba(0,0,0,.14)"/>
+    <rect x="58" y="96" width="30" height="50" rx="10" fill="#c2410c" ${S}/>
+    <rect x="80" y="148" width="16" height="32" rx="6" fill="${skin}" ${S}/><rect x="104" y="148" width="16" height="32" rx="6" fill="${skin}" ${S}/>
+    <path d="M76 178 L98 178 L98 190 L72 190 Q72 182 76 178 Z" fill="#16a34a" ${S}/><path d="M102 178 L124 178 Q128 182 128 190 L102 190 Z" fill="#16a34a" ${S}/>
+    <path d="M74 140 L126 140 L128 162 L72 162 Z" fill="#a16207" ${S}/>
+    <rect x="68" y="96" width="64" height="54" rx="20" fill="#14b8a6" ${S}/>
+    <path d="M100 100 L100 146" stroke="#0f766e" stroke-width="3"/>
+    <rect x="54" y="102" width="16" height="40" rx="8" fill="#14b8a6" ${S}/><rect x="130" y="102" width="16" height="40" rx="8" fill="#14b8a6" ${S}/>
+    <circle cx="62" cy="146" r="8" fill="${skin}" ${S}/><circle cx="138" cy="146" r="8" fill="${skin}" ${S}/>
+    <path d="M76 100 L84 140 M124 100 L116 140" stroke="#c2410c" stroke-width="6" stroke-linecap="round"/>
+    <path d="M66 56 Q60 74 70 84 L72 66 Z M134 56 Q140 74 130 84 L128 66 Z" fill="${hair}" ${S}/>
+    <circle cx="100" cy="68" r="31" fill="${skin}" ${S}/>
+    <path d="M70 60 L76 72 L82 62 L88 74 L94 62 L100 72 L106 62 L112 74 L118 62 L124 72 L130 60 Q100 44 70 60 Z" fill="${hair}" ${S}/>
+    <path d="M66 54 Q100 18 134 54 Q100 46 66 54 Z" fill="#fb923c" ${S}/><path d="M96 52 L150 56 Q146 64 100 62 Z" fill="#fb923c" ${S}/>
+    <circle cx="100" cy="36" r="6" fill="#fff" ${S}/>
+    <path d="M70 52 L64 46 M72 48 L70 40" stroke="${hairD}" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="88" cy="74" rx="4.5" ry="6" fill="${OL}"/><ellipse cx="112" cy="74" rx="4.5" ry="6" fill="${OL}"/>
+    <circle cx="86.5" cy="72" r="1.8" fill="#fff"/><circle cx="110.5" cy="72" r="1.8" fill="#fff"/>
+    <circle cx="80" cy="84" r="5" fill="#ff7a8a" opacity=".45"/><circle cx="120" cy="84" r="5" fill="#ff7a8a" opacity=".45"/>
+    <path d="M90 88 Q100 97 110 88" fill="none" stroke="${OL}" stroke-width="3" stroke-linecap="round"/>
+  </svg>`;
+}
+
+// Smooth closed outline through points (for coastlines)
+function smoothClosed(pts) {
+  const n = pts.length;
+  let d = `M${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i - 1 + n) % n], p1 = pts[i], p2 = pts[(i + 1) % n], p3 = pts[(i + 2) % n];
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6], c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += ` C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0]} ${p2[1]}`;
+  }
+  return d + ' Z';
+}
+function regionMapSVG(J) {
+  const waves = [[20, 20], [24, 80], [214, 16], [226, 84], [60, 92], [190, 30]].map(([x, y]) => `<path d="M${x - 6} ${y} q3 -3 6 0 t6 0" fill="none" stroke="#ffffff" stroke-width=".8" opacity=".7" stroke-linecap="round"/>`).join('');
+  const route = J.nodes.map(([x, y], i) => `${i ? 'L' : 'M'}${x} ${y}`).join(' ');
+  return `<svg class="map-svg" viewBox="0 0 240 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="240" height="100" fill="#7cc4f2"/>${waves}
+    <path d="${smoothClosed(J.outline)}" fill="#e9dcb2" transform="translate(0 1.4)"/>
+    <path d="${smoothClosed(J.outline)}" fill="${J.land}" stroke="#4b7a3a" stroke-width=".7"/>
+    ${J.islands.map((pts) => `<path d="${smoothClosed(pts)}" fill="${J.land}" stroke="#4b7a3a" stroke-width=".7"/>`).join('')}
+    ${J.lakes.map(([x, y, rx, ry]) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="#7cc4f2" stroke="#4b7a3a" stroke-width=".6"/>`).join('')}
+    <path d="${route}" fill="none" stroke="#7a5a2a" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round" opacity=".35"/>
+    <path d="${route}" fill="none" stroke="#fff8e7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.1 6.5"/>
+    <path d="${route}" fill="none" stroke="#fff8e7" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
 }
 
 // ---------- save ----------
@@ -125,7 +214,7 @@ const badgeCount = () => (save && save.reading ? save.reading.badges.filter(Bool
 let readingView = null;
 
 // ---------- map ----------
-const NODE_POS = [[12, 74], [31, 38], [51, 72], [70, 36], [88, 62]];
+const pctX = (x) => (x / 240) * 100;
 function screenReading(r) {
   ensureReading();
   if (r === undefined || r === null) r = readingView ?? currentJourney();
@@ -137,8 +226,6 @@ function screenReading(r) {
     return badge ? 'done' : done >= 4 ? 'next' : 'locked';
   };
   const buddyAt = badge ? 4 : Math.min(done, 4);
-  const pathD = NODE_POS.map(([x, y], i) => `${i ? 'L' : 'M'}${x} ${y}`).join(' ');
-  const decor = [[6, 20], [22, 82], [42, 18], [62, 86], [80, 16], [94, 86], [40, 46], [86, 40]];
   const info = badge ? `🏅 You earned the ${J.badge}! ${r < 4 ? `Next: ${JOURNEYS[r + 1].name}!` : 'You finished every journey!'}`
     : done >= 4 ? `Gym Leader ${J.leader} is waiting! Read all 20 words to win the ${J.badge}.`
     : `Next stop: <b>${J.stops[done]}</b> — 5 new words`;
@@ -147,22 +234,22 @@ function screenReading(r) {
       <header class="topbar">
         <button class="home-btn" data-go="menu" aria-label="Menu">🏠</button>
         <div class="topbar-title">Reading Journey</div>
-        <div class="badge-row">${JOURNEYS.map((j, i) => `<span class="badge-slot${save.reading.badges[i] ? ' got' : ''}">${save.reading.badges[i] ? badgeSVG(j.shape, j.color) : ''}</span>`).join('')}</div>
+        <div class="badge-row">${JOURNEYS.map((j, i) => `<span class="badge-slot${save.reading.badges[i] ? ' got' : ''}">${save.reading.badges[i] ? badgeSVG(j.shape, j.badgeColor) : ''}</span>`).join('')}</div>
       </header>
       <div class="region-tabs">
         ${JOURNEYS.map((j, i) => `<button class="region-tab${i === r ? ' on' : ''}" data-r="${i}" style="--rc:${j.color}" ${journeyUnlocked(i) ? '' : 'disabled'}>${journeyUnlocked(i) ? '' : '🔒 '}${j.name}</button>`).join('')}
       </div>
-      <div class="map card" style="--m1:${J.bg[0]};--m2:${J.bg[1]};--rc:${J.color}">
-        <svg class="map-path" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="${pathD}" vector-effect="non-scaling-stroke"/></svg>
-        ${decor.map(([x, y]) => `<span class="map-decor" style="left:${x}%;top:${y}%">${J.decor}</span>`).join('')}
-        ${NODE_POS.map(([x, y], i) => {
+      <div class="map card" style="--rc:${J.color}">
+        ${regionMapSVG(J)}
+        ${J.decorAt.map(([x, y]) => `<span class="map-decor" style="left:${pctX(x)}%;top:${y}%">${J.decor}</span>`).join('')}
+        ${J.nodes.map(([x, y], i) => {
           const st = state(i), gym = i === 4;
           const label = gym ? `${J.name} Gym` : J.stops[i];
-          const icon = gym ? (st === 'done' ? badgeSVG(J.shape, J.color) : '🏟️') : st === 'done' ? '⭐' : st === 'locked' ? '🔒' : i + 1;
-          return `<button class="map-node ${st}${gym ? ' gym' : ''}" data-i="${i}" style="left:${x}%;top:${y}%" ${st === 'locked' ? 'disabled' : ''}>
+          const icon = gym ? (st === 'done' ? badgeSVG(J.shape, J.badgeColor) : '🏟️') : st === 'done' ? '⭐' : st === 'locked' ? '🔒' : i + 1;
+          return `<button class="map-node ${st}${gym ? ' gym' : ''}" data-i="${i}" style="left:${pctX(x)}%;top:${y}%" ${st === 'locked' ? 'disabled' : ''}>
             <span class="node-icon">${icon}</span><span class="node-label">${label}</span></button>`;
         }).join('')}
-        <div class="map-buddy sprite bob" style="left:${NODE_POS[buddyAt][0]}%;top:${NODE_POS[buddyAt][1]}%">${monSVG(partnerMon())}</div>
+        <div class="map-buddy sprite bob" style="left:${pctX(J.nodes[buddyAt][0])}%;top:${J.nodes[buddyAt][1]}%">${heroSVG()}</div>
       </div>
       <div class="map-info card">${info}</div>
     </div>`);
@@ -280,7 +367,7 @@ async function screenStop(r, s) {
     <div class="screen read-stop">
       ${readTop(`${J.name} · ${J.stops[s]}`)}
       <div class="split">
-        <div class="stage"><div class="sprite stage-sprite bob">${monSVG(partnerMon())}</div></div>
+        <div class="stage"><div class="sprite stage-sprite bob">${heroSVG()}</div></div>
         <div class="panel card"></div>
       </div>
     </div>`);
@@ -323,7 +410,7 @@ async function screenGym(r) {
   const panel = $('.panel');
   panel.innerHTML = `
     <div class="center-msg">
-      <div class="gym-badge-preview">${badgeSVG(J.shape, J.color)}</div>
+      <div class="gym-badge-preview">${badgeSVG(J.shape, J.badgeColor)}</div>
       <h2>Gym Leader ${J.leader}${TRAINER_STYLE[J.leader] === 'dog' ? ' 🐾' : ''}</h2>
       <p>Read all 20 ${J.name} words to win the <b>${J.badge}</b>!</p>
       <div class="btn-row"><button class="btn grey" data-go="reading">Not yet</button><button class="btn green big" id="go">I'm ready!</button></div>
@@ -344,7 +431,7 @@ async function screenGym(r) {
   setTimeout(confetti, 900);
   panel.innerHTML = `
     <div class="center-msg">
-      <div class="badge-win">${badgeSVG(J.shape, J.color)}</div>
+      <div class="badge-win">${badgeSVG(J.shape, J.badgeColor)}</div>
       <h2>You won the ${J.badge}!</h2>
       <p>${first ? (r < 4 ? `Amazing reading! The road to ${JOURNEYS[r + 1].name} is open.` : 'You finished every journey. You are a Reading Champion!') : 'You read every word again. Super!'}</p>
       <div class="btn-row"><button class="btn grey" data-go="menu">Home</button><button class="btn green big" id="onward">${first && r < 4 ? `Go to ${JOURNEYS[r + 1].name} ▶` : 'Back to the map 🗺️'}</button></div>
