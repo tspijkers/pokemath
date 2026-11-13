@@ -239,7 +239,7 @@ function solveProblems(host, { count = 5, title = '' } = {}) {
 function screenChoose() {
   show(`
     <div class="screen choose">
-      <h1 class="logo">Poke<span>Math</span></h1>
+      <h1 class="logo">Poke<span>Learn</span></h1>
       <p class="subtitle">Pick your partner Pokémon!</p>
       <div class="starter-grid">
         ${STARTERS.map((id) => {
@@ -275,12 +275,12 @@ function screenMenu() {
   show(`
     <div class="screen menu">
       <div class="menu-top"><div></div><button class="btn gear-btn" id="settings" aria-label="Settings">⚙️</button></div>
-      <h1 class="logo">Poke<span>Math</span></h1>
+      <h1 class="logo">Poke<span>Learn</span></h1>
       <div class="sprite menu-buddy bob">${monSVG(partnerMon())}</div>
       <p class="subtitle">What do you want to do today?</p>
       <div class="menu-grid">
-        <button class="menu-btn m-math" data-go="home"><span class="icon">🔢</span><span>Math</span><small>Level ${mathLevel()} · ${caughtCount()} Pokémon</small></button>
-        <button class="menu-btn m-read" data-go="reading"><span class="icon">📖</span><span>Reading</span><small>${badgeCount()} of 5 badges</small></button>
+        <button class="menu-btn m-math" data-go="home"><span class="icon">🔢</span><span>PokeMath</span><small>Level ${mathLevel()} · ${caughtCount()} Pokémon</small></button>
+        <button class="menu-btn m-read" data-go="reading"><span class="icon">📖</span><span>PokeRead</span><small>${badgeCount()} of 5 badges</small></button>
       </div>
     </div>`);
   $('#settings').addEventListener('click', openSettings);
