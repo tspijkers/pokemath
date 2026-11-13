@@ -449,6 +449,32 @@ h1, h2, p { margin: 0; }
 .map-info.go:active { transform: translateY(4px); }
 .go-arrow { background: var(--green); color: #fff; border-radius: 999px; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
 
+/* ---------- who's playing ---------- */
+.profiles { justify-content: center; align-items: center; gap: 18px; }
+.profile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; width: 100%; max-width: 900px; }
+.profile-card {
+  border: none; background: #fff; border-radius: var(--radius); padding: 16px 12px 18px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  box-shadow: 0 7px 0 var(--pc), 0 14px 30px rgba(0,0,0,.12); transition: transform .1s;
+}
+.profile-card:active { transform: translateY(5px); }
+.profile-avatar { width: 110px; height: 110px; border-radius: 50%; background: color-mix(in srgb, var(--pc) 22%, white); border: 5px solid var(--pc); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.profile-avatar span { font-size: 3.4rem; font-weight: 900; color: var(--pc); }
+.profile-avatar .sprite { width: 96%; height: 96%; }
+.profile-avatar.small { width: 76px; height: 76px; margin: 0 auto; }
+.profile-avatar.small span { font-size: 2.4rem; }
+.profile-name { font-size: 1.7rem; font-weight: 900; }
+.profile-sub { font-size: 1rem; font-weight: 700; color: var(--muted); }
+.pin-modal { width: min(380px, 100%); }
+.pin-modal.shake { animation: shake .4s; }
+.pin-dots { display: flex; gap: 14px; justify-content: center; margin: 4px 0 8px; }
+.pin-dots span { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--pc); background: #fff; transition: background .15s; }
+.pin-dots span.on { background: var(--pc); }
+.pin-pad button { height: 64px; }
+.player-btn { --b: #fff; --bd: var(--pc); font-size: 1.15rem; border: 3px solid var(--pc); }
+.player-btn small { font-size: .85rem; color: var(--muted); font-weight: 700; }
+@media (max-aspect-ratio: 1/1), (max-width: 760px) { .profile-grid { grid-template-columns: repeat(2, 1fr); } .profile-avatar { width: 90px; height: 90px; } }
+
 /* ---------- confetti ---------- */
 .confetti { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
 .confetti span { position: absolute; top: -20px; width: 12px; height: 18px; border-radius: 3px; animation: fall linear forwards; }
