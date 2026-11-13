@@ -75,6 +75,41 @@ const PARTNER_MOVES = {
   ],
 };
 
+// Move lists by type, one per Rank (power 20 → 45).
+const TYPE_MOVES = {
+  normal: ['Tackle', 'Quick Attack', 'Headbutt', 'Body Slam', 'Hyper Beam'],
+  fire: ['Scratch', 'Ember', 'Fire Fang', 'Flamethrower', 'Fire Blast'],
+  water: ['Tackle', 'Bubble', 'Water Gun', 'Bubble Beam', 'Hydro Pump'],
+  grass: ['Tackle', 'Vine Whip', 'Razor Leaf', 'Seed Bomb', 'Solar Beam'],
+  electric: ['Quick Attack', 'Thunder Shock', 'Spark', 'Thunderbolt', 'Thunder'],
+  ice: ['Tackle', 'Powder Snow', 'Ice Shard', 'Ice Beam', 'Blizzard'],
+  fighting: ['Karate Chop', 'Low Kick', 'Double Kick', 'Submission', 'Close Combat'],
+  poison: ['Poison Sting', 'Acid', 'Sludge', 'Poison Jab', 'Sludge Bomb'],
+  ground: ['Mud Slap', 'Bulldoze', 'Dig', 'Earth Power', 'Earthquake'],
+  flying: ['Peck', 'Gust', 'Wing Attack', 'Drill Peck', 'Sky Attack'],
+  psychic: ['Confusion', 'Psybeam', 'Zen Headbutt', 'Psychic', 'Future Sight'],
+  bug: ['Bug Bite', 'Fury Cutter', 'Pin Missile', 'X-Scissor', 'Megahorn'],
+  rock: ['Rock Throw', 'Rock Tomb', 'Rock Slide', 'Power Gem', 'Stone Edge'],
+  ghost: ['Lick', 'Astonish', 'Shadow Sneak', 'Shadow Claw', 'Shadow Ball'],
+  dragon: ['Twister', 'Dragon Breath', 'Dragon Tail', 'Dragon Claw', 'Outrage'],
+};
+const MOVE_POWER = [20, 25, 30, 35, 45];
+// The 5 moves a Pokémon learns, one per Rank. Partners keep their hand-picked lists;
+// two-type Pokémon mix moves from both types.
+const _moveCache = {};
+function movesFor(id) {
+  if (PARTNER_MOVES[id]) return PARTNER_MOVES[id];
+  if (_moveCache[id]) return _moveCache[id];
+  const [t1, t2] = DEX[id].types;
+  const list = MOVE_POWER.map((power, i) => {
+    const type = t2 && (i === 1 || i === 3) ? t2 : t1;
+    return { name: TYPE_MOVES[type][i], type, power };
+  });
+  return (_moveCache[id] = list);
+}
+// Pokémon from higher Level groups are a bit stronger (HP and hit power).
+const GROUP_BONUS = { 1: 1, 2: 1.06, 3: 1.12, 4: 1.2 };
+
 // What wild / trainer Pokémon use when they fight back
 const FOE_MOVE = {
   normal: 'Tackle', fire: 'Ember', water: 'Water Gun', grass: 'Vine Whip', electric: 'Thunder Shock',
