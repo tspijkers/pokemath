@@ -851,6 +851,8 @@ const TOURNAMENTS = [
 ];
 const ROUND_NAMES = ['Quarter Final', 'Semi Final', 'Final'];
 const TOURNEY_QUESTIONS = 3;
+const TOURNEY_FOES = [1, 2, 3];      // Pokémon per trainer: quarter, semi, final
+const TOURNEY_HIT = [14, 17, 20];    // how hard their Pokémon hit (perfect answers still always win)
 // Pokémon the gym leaders use, by badge type (from the 151; legendaries excluded).
 const TYPE_TEAMS = {
   fire: [4, 5, 37, 38, 58, 59, 77, 78, 126, 136], water: [7, 8, 54, 55, 60, 61, 86, 98, 99, 116, 118, 120, 134],
@@ -902,7 +904,7 @@ function screenTournament(t) {
           <p class="kicker">Words from ${regionNames}</p>
           <div class="bracket">${rows}</div>
           <div class="btn-row"><button class="btn green big" id="start-round">${st.won && st.round === 0 ? 'Play again' : `Start ${ROUND_NAMES[st.round]}`} ⚔️</button></div>
-          <p class="tourney-note">Pick one of your Pokémon for each battle. Every attack needs ${TOURNEY_QUESTIONS} words read correctly!</p>
+          <p class="tourney-note">Quarter final: 1 Pokémon · Semi final: 2 · Final: 3. Pick who goes first and switch after each attack. Every attack needs ${TOURNEY_QUESTIONS} words read correctly!</p>
         </div>
       </div>
     </div>`);
@@ -916,7 +918,7 @@ async function pickFighter(t) {
   const choice = await new Promise((resolve) => {
     const el = document.createElement('div');
     el.className = 'modal-back';
-    el.innerHTML = `<div class="modal fighter-modal"><h2>Who will battle?</h2><p>${ROUND_NAMES[st.round]} vs ${tourneyOpponent(t, st.round).name}</p>
+    el.innerHTML = `<div class="modal fighter-modal"><h2>Who goes first?</h2><p>${ROUND_NAMES[st.round]} vs ${tourneyOpponent(t, st.round).name} (${TOURNEY_FOES[st.round]} Pokémon). You can switch after each attack.</p>
       <div class="fighter-grid">${ids.map((id) => `<button class="fighter" data-id="${id}"><div class="sprite">${monSVG(DEX[id])}</div><b>${DEX[id].name}</b><span>${'★'.repeat(save.team[id].rank)}</span></button>`).join('')}</div>
       <div class="modal-buttons"><button class="btn grey" data-x="1">Cancel</button></div></div>`;
     document.body.appendChild(el);
@@ -934,11 +936,13 @@ function startTourneyBattle(t, allyId) {
   const opp = tourneyOpponent(t, round);
   const allyRank = save.team[allyId].rank;
   const rank = Math.min(5, allyRank + (round === 2 ? 1 : 0));
-  const maxHp = 55 + 10 * allyRank + 12 * round + rand(0, 8);
-  const foe = { mon: DEX[pick(opp.team)], level: rank, maxHp, hp: maxHp };
+  // Quarter final: 1 Pokémon, semi final: 2, final: 3 (all different).
+  const picks = shuffle(opp.team).slice(0, TOURNEY_FOES[round]);
+  const foes = picks.map((id) => { const maxHp = 50 + 8 * allyRank + 6 * round + rand(0, 8); return { mon: DEX[id], level: rank, maxHp, hp: maxHp }; });
   const words = T.regions.flatMap((r) => JOURNEYS[r].words);
   runBattle({
-    mode: 'trainer', trainer: opp.name, foes: [foe], allyId, back: 'reading',
+    mode: 'trainer', trainer: opp.name, foes, allyId, back: 'reading',
+    party: Object.keys(save.team).map(Number), foePower: TOURNEY_HIT[round],
     title: `🏆 ${ROUND_NAMES[round]}`,
     ask: (panel, move, tok) => wordQuiz(panel, shuffle(words).slice(0, TOURNEY_QUESTIONS), words, `Read to power up <b>${move.name}</b>!`, tok),
     onRun: () => screenTournament(t),
