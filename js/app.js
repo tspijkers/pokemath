@@ -63,6 +63,34 @@ const activeRank = () => save.team[save.active].rank;
 const knownMoves = () => movesFor(save.active).slice(0, activeRank());
 const groupBonus = (id) => GROUP_BONUS[LEVEL_OF[id]] || 1;
 
+// ---------- learning stats (per player) ----------
+// words / facts: { seen, wrong, streak } — "tricky" = missed at least once and not yet right 3 times in a row.
+const MASTERED_STREAK = 3;
+const statsOf = (s = save) => (s.stats ||= { words: {}, facts: {}, days: {} });
+function recordItem(kind, key, firstTry) {
+  if (!save) return;
+  const it = (statsOf()[kind][key] ||= { seen: 0, wrong: 0, streak: 0 });
+  it.seen++;
+  if (firstTry) it.streak++; else { it.wrong++; it.streak = 0; }
+  persist();
+}
+function trickyList(s, kind) {
+  if (!s || !s.stats) return [];
+  return Object.entries(s.stats[kind] || {})
+    .filter(([, v]) => v.wrong > 0 && v.streak < MASTERED_STREAK)
+    .sort((a, b) => b[1].wrong - a[1].wrong || a[1].streak - b[1].streak)
+    .map(([key, v]) => ({ key, ...v }));
+}
+const todayKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+// count a minute of play for the signed-in player while the app is open and visible
+setInterval(() => {
+  if (!save || !profile || document.visibilityState !== 'visible') return;
+  const days = statsOf().days, k = todayKey();
+  days[k] = (days[k] || 0) + 1;
+  for (const d of Object.keys(days).sort().slice(0, -60)) delete days[d]; // keep ~2 months
+  persist();
+}, 60000);
+
 // ---------- sound & voice ----------
 const Sound = {
   ctx: null,
@@ -166,6 +194,16 @@ function makeProblem() {
   if (cfg.addSub) ops.push('+', '-');
   if (cfg.mul) ops.push('x');
   let p;
+  // About 1 in 3 problems is a tricky fact this player missed before (if it fits the current level).
+  const okFact = (a, op, b) => ops.includes(op) && (op === 'x' ? a <= cfg.mul && b <= cfg.mul : a <= cfg.addSub && b <= cfg.addSub && (op === '+' || b < a));
+  const tricky = trickyList(save, 'facts').map((t) => t.key.match(/^(\d+)([+x-])(\d+)$/)).filter(Boolean)
+    .map(([, a, op, b]) => ({ a: +a, op, b: +b })).filter((t) => okFact(t.a, t.op, t.b) && !(lastProblem && t.a === lastProblem.a && t.b === lastProblem.b && t.op === lastProblem.op));
+  if (tricky.length && Math.random() < 0.33) {
+    const t = pick(tricky);
+    p = { ...t, ans: t.op === '+' ? t.a + t.b : t.op === '-' ? t.a - t.b : t.a * t.b };
+    lastProblem = p;
+    return p;
+  }
   do {
     const op = pick(ops);
     if (op === '+') {
@@ -187,7 +225,7 @@ function makeProblem() {
 // Resolves with the number of wrong tries.
 function solveProblems(host, { count = 5, title = '' } = {}) {
   return new Promise((resolve) => {
-    let i = 0, mistakes = 0, input = '', p = makeProblem(), busy = false;
+    let i = 0, mistakes = 0, input = '', p = makeProblem(), busy = false, missedThis = false;
     host.innerHTML = `
       <div class="quiz">
         <div class="quiz-head">
@@ -220,16 +258,17 @@ function solveProblems(host, { count = 5, title = '' } = {}) {
         Sound.correct();
         fb.textContent = pick(PRAISE); fb.className = 'feedback good';
         ans.classList.add('right');
+        recordItem('facts', `${p.a}${p.op}${p.b}`, !missedThis);
         i++; render();
         setTimeout(() => {
           if (i >= count) { cleanup(); resolve(mistakes); return; }
-          p = makeProblem(); input = '';
+          p = makeProblem(); input = ''; missedThis = false;
           ans.classList.remove('right');
           fb.innerHTML = '&nbsp;'; fb.className = 'feedback';
           busy = false; render();
         }, 750);
       } else {
-        mistakes++;
+        mistakes++; missedThis = true;
         Sound.wrong();
         fb.textContent = 'Not quite — try again!'; fb.className = 'feedback bad';
         quiz.classList.remove('shake'); void quiz.offsetWidth; quiz.classList.add('shake');
@@ -338,7 +377,9 @@ function screenProfiles() {
           </button>`;
         }).join('')}
       </div>
+      <button class="btn grey small parent-btn" id="parent">👪 Parent</button>
     </div>`);
+  $('#parent').addEventListener('click', () => { Sound.tap(); askPin(PARENT, () => screenParent()); });
   $('.profile-grid').addEventListener('click', (e) => {
     const c = e.target.closest('.profile-card');
     if (!c) return;
@@ -346,7 +387,7 @@ function screenProfiles() {
     askPin(PROFILES.find((p) => p.id === c.dataset.id));
   });
 }
-function askPin(p) {
+function askPin(p, onOk = openProfile) {
   let code = '';
   const el = document.createElement('div');
   el.className = 'modal-back';
@@ -371,7 +412,7 @@ function askPin(p) {
     if (code.length >= 4) return;
     code += k; Sound.tap(); draw();
     if (code.length === 4) {
-      if (code === p.pin) { setTimeout(() => { close(); openProfile(p); }, 200); }
+      if (code === p.pin) { setTimeout(() => { close(); onOk(p); }, 200); }
       else {
         setTimeout(() => {
           Sound.wrong();
@@ -386,6 +427,56 @@ function askPin(p) {
   const onKey = (e) => { if (/^[0-9]$/.test(e.key)) press(e.key); else if (e.key === 'Backspace') press('del'); else if (e.key === 'Escape') press('back'); };
   document.addEventListener('keydown', onKey);
 }
+// ---------- parent page ----------
+const PARENT = { id: 'parent', name: 'Parent', pin: '2580', color: '#475569' };
+const factLabel = (k) => k.replace(/^(\d+)([+x-])(\d+)$/, (_, a, op, b) => `${a} ${OP_SIGN[op]} ${b}`);
+function screenParent(sel = PROFILES[0].id) {
+  const p = PROFILES.find((x) => x.id === sel);
+  const s = readSave(keyFor(p.id));
+  const days = [...Array(7)].map((_, i) => { const d = new Date(); d.setDate(d.getDate() - (6 - i)); return d; });
+  const mins = days.map((d) => (s && s.stats && s.stats.days[todayKey(d)]) || 0);
+  const maxMin = Math.max(10, ...mins);
+  const tw = trickyList(s, 'words'), tf = trickyList(s, 'facts');
+  const count = (kind, fn) => Object.values((s && s.stats && s.stats[kind]) || {}).filter(fn).length;
+  const legends = s ? LEVEL_POKEMON[LEGENDARY_GROUP].filter((id) => s.caught[id]).length : 0;
+  const tWon = s && s.reading && s.reading.tournaments ? s.reading.tournaments.filter((t) => t.won).length : 0;
+  const chips = (list, label) => list.length
+    ? list.slice(0, 12).map((t) => `<span class="tricky-chip"><b>${label(t.key)}</b> missed ${t.wrong}×${t.streak ? ` · ${t.streak}/${MASTERED_STREAK} right` : ''}</span>`).join('')
+    : '<p class="muted">Nothing tricky yet 🎉</p>';
+  show(`
+    <div class="screen parent">
+      <header class="topbar"><button class="home-btn" id="parent-exit" aria-label="Back">🏠</button><div class="topbar-title">👪 Parent page</div><div class="topbar-spacer"></div></header>
+      <div class="parent-tabs">${PROFILES.map((x) => `<button class="parent-tab${x.id === sel ? ' on' : ''}" data-id="${x.id}" style="--pc:${x.color}">${x.name}</button>`).join('')}</div>
+      ${!s ? `<div class="card parent-card"><h2>${p.name}</h2><p class="muted">${p.name} hasn't started a game yet.</p></div>` : `
+      <div class="parent-grid">
+        <div class="card parent-card">
+          <h3>Progress</h3>
+          <div class="stat-row"><span>Partner</span><b>${DEX[s.partner.id].name}</b></div>
+          <div class="stat-row"><span>Pokémon caught</span><b>${Object.keys(s.caught).length} / ${DEX_COUNT}</b></div>
+          <div class="stat-row"><span>PokeMath level</span><b>Level ${s.mathLevel || 1}</b></div>
+          <div class="stat-row"><span>Reading badges</span><b>${s.reading ? s.reading.badges.filter(Boolean).length : 0} / ${JOURNEYS.length}</b></div>
+          <div class="stat-row"><span>Tournaments won</span><b>${tWon} / ${TOURNAMENTS.length}</b></div>
+          <div class="stat-row"><span>Legendary Pokémon</span><b>${legends}</b></div>
+        </div>
+        <div class="card parent-card">
+          <h3>Time played (last 7 days): ${mins.reduce((a, b) => a + b, 0)} min</h3>
+          <div class="week-bars">${days.map((d, i) => `<div class="week-bar"><div class="bar-val">${mins[i] || ''}</div><div class="bar" style="height:${Math.round((mins[i] / maxMin) * 100)}%"></div><div class="bar-day">${d.toLocaleDateString(undefined, { weekday: 'short' })}</div></div>`).join('')}</div>
+        </div>
+        <div class="card parent-card wide">
+          <h3>📖 Tricky words <small>${tw.length} to practice · ${count('words', (v) => v.streak >= MASTERED_STREAK)} read well 3× in a row</small></h3>
+          <div class="tricky-list">${chips(tw, (k) => k)}</div>
+        </div>
+        <div class="card parent-card wide">
+          <h3>🔢 Tricky math facts <small>${tf.length} to practice · ${count('facts', (v) => v.streak >= MASTERED_STREAK)} answered right 3× in a row</small></h3>
+          <div class="tricky-list">${chips(tf, factLabel)}</div>
+        </div>
+      </div>
+      <p class="muted parent-note">Tricky items come back more often in stops, tournaments and math problems until they're answered right ${MASTERED_STREAK} times in a row.</p>`}
+    </div>`);
+  $('.parent-tabs').addEventListener('click', (e) => { const t = e.target.closest('.parent-tab'); if (t) { Sound.tap(); screenParent(t.dataset.id); } });
+  $('#parent-exit').addEventListener('click', () => { Sound.tap(); screenProfiles(); });
+}
+
 async function openProfile(p) {
   profile = p;
   SAVE_KEY = keyFor(p.id);
