@@ -27,6 +27,9 @@ try {
 } catch (e) {}
 let profile = null;
 let SAVE_KEY = null;
+// Tester mode: the Tommy profile (the parent's test account) has every lock removed.
+const TESTER_ID = 'tommy';
+const isTester = () => !!profile && profile.id === TESTER_ID;
 let save = null;
 const keyFor = (id) => `pokemath-save-v1:${id}`;
 function readSave(key) {
@@ -349,7 +352,7 @@ function screenMenu() {
   ensureReading();
   show(`
     <div class="screen menu">
-      <div class="menu-top"><button class="btn player-btn" id="switch-player" style="--pc:${profile.color}">👤 ${profile.name} <small>switch</small></button><button class="btn gear-btn" id="settings" aria-label="Settings">⚙️</button></div>
+      <div class="menu-top"><button class="btn player-btn" id="switch-player" style="--pc:${profile.color}">👤 ${profile.name} <small>switch</small></button>${isTester() ? '<span class="tester-tag">🔓 Tester · all unlocked</span>' : ''}<button class="btn gear-btn" id="settings" aria-label="Settings">⚙️</button></div>
       <h1 class="logo">Poke<span>Learn</span></h1>
       <div class="sprite menu-buddy bob">${monSVG(partnerMon())}</div>
       <p class="subtitle">What do you want to do today?</p>
