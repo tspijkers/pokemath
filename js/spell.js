@@ -4,6 +4,9 @@
 
 const EGG_IDS = LEVEL_POKEMON[SPELL_GROUP];       // egg i hatches EGG_IDS[i]
 const SPELL_DECOYS = 3;
+// Only the CVC words (cat, bed, pin…) are used for spelling: 4 warm-ups of 3, then all 12 to hatch.
+const SPELL_STOP = 3;
+const spellWords = (i) => JOURNEYS[i].cvc;
 const EGG_STYLE = {                                // egg colors/pattern hint at the type (no spoilers)
   normal: ['#fef3c7', '#d6b98c', 'spots'], fire: ['#fed7aa', '#f97316', 'flames'], water: ['#bae6fd', '#0ea5e9', 'waves'],
   dragon: ['#ddd6fe', '#7c3aed', 'zigzag'], bug: ['#d9f99d', '#65a30d', 'spots'], psychic: ['#fbcfe8', '#db2777', 'stars'],
@@ -140,8 +143,8 @@ function screenLab() {
   const i = Math.min(sp.egg, EGG_IDS.length - 1), allDone = sp.hatched.every(Boolean);
   const J = JOURNEYS[i];
   const stageText = allDone ? 'You hatched every egg! 🎉' : sp.stage < 4
-    ? `Warm-up ${sp.stage + 1} of 4 — spell ${STOP_SIZE} ${J.name} words`
-    : `Ready to hatch! Spell all ${J.words.length} ${J.name} words`;
+    ? `Warm-up ${sp.stage + 1} of 4 — spell ${SPELL_STOP} ${J.name} words`
+    : `Ready to hatch! Spell all ${spellWords(i).length} ${J.name} words`;
   show(`
     <div class="screen lab">
       <header class="topbar">
@@ -197,7 +200,7 @@ function labShell(title, i, cracks) {
 }
 
 async function screenWarmUp(i, stage) {
-  const J = JOURNEYS[i], words = J.words.slice(stage * STOP_SIZE, stage * STOP_SIZE + STOP_SIZE);
+  const J = JOURNEYS[i], words = spellWords(i).slice(stage * SPELL_STOP, stage * SPELL_STOP + SPELL_STOP);
   const tok = labShell(`🔥 Warm-up ${stage + 1} of 4`, i, stage);
   const panel = $('.panel');
   await spellQuiz(panel, words, `Warm-up ${stage + 1}`, tok);
@@ -218,7 +221,7 @@ async function screenHatch(i) {
   const J = JOURNEYS[i], id = EGG_IDS[i];
   const tok = labShell(`🐣 Hatch egg ${i + 1}`, i, 4);
   const panel = $('.panel');
-  await spellQuiz(panel, J.words, 'Hatching!', tok, () => retrigger($('.big-egg'), 'egg-crack'));
+  await spellQuiz(panel, spellWords(i), 'Hatching!', tok, () => retrigger($('.big-egg'), 'egg-crack'));
   if (!alive(tok)) return;
   const sp = ensureSpell();
   sp.hatched[i] = true;
