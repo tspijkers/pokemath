@@ -142,7 +142,7 @@ app.addEventListener('click', (e) => {
   const go = e.target.closest('[data-go]');
   if (!go) return;
   Sound.tap();
-  ({ menu: screenMenu, home: screenHome, train: screenTrain, catch: screenCatch, battle: screenBattle, dex: screenDex, reading: () => screenReading() })[go.dataset.go]();
+  ({ menu: screenMenu, home: screenHome, train: screenTrain, catch: screenCatch, battle: screenBattle, dex: screenDex, reading: () => screenReading(), lab: screenLab })[go.dataset.go]();
 });
 
 const topbar = (title, back = 'home') => `<header class="topbar"><button class="home-btn" data-go="${back}" aria-label="Back">${back === 'reading' ? '🗺️' : '🏠'}</button><div class="topbar-title">${title}</div><div class="topbar-spacer"></div></header>`;
@@ -356,6 +356,7 @@ function screenMenu() {
       <div class="menu-grid">
         <button class="menu-btn m-math" data-go="home"><span class="icon">🔢</span><span><span class="poke">Poke</span>Math</span><small>Level ${mathLevel()} · ${caughtCount()} Pokémon</small></button>
         <button class="menu-btn m-read" data-go="reading"><span class="icon">📖</span><span><span class="poke">Poke</span>Read</span><small>${badgeCount()} of ${JOURNEYS.length} badges</small></button>
+        <button class="menu-btn m-spell" data-go="lab"><span class="icon">🥚</span><span><span class="poke">Poke</span>Spell</span><small>${eggsHatched()} of ${EGG_IDS.length} eggs hatched</small></button>
       </div>
     </div>`);
   $('#settings').addEventListener('click', openSettings);
@@ -464,6 +465,7 @@ function screenParent(sel = PROFILES[0].id) {
           <div class="stat-row"><span>Partner</span><b>${DEX[s.partner.id].name}</b></div>
           <div class="stat-row"><span>Pokémon caught</span><b>${Object.keys(s.caught).length} / ${DEX_IDS.length}</b></div>
           <div class="stat-row"><span>PokeMath level</span><b>Level ${s.mathLevel || 1}</b></div>
+          <div class="stat-row"><span>PokeSpell eggs hatched</span><b>${eggsHatched(s)} / ${LEVEL_POKEMON[SPELL_GROUP].length}</b></div>
           <div class="stat-row"><span>Reading badges</span><b>${s.reading ? s.reading.badges.filter(Boolean).length : 0} / ${JOURNEYS.length}</b></div>
           <div class="stat-row"><span>Tournaments won</span><b>${tWon} / ${TOURNAMENTS.length}</b></div>
           <div class="stat-row"><span>Legendary Pokémon</span><b>${legends}</b></div>
@@ -1100,13 +1102,14 @@ function screenDex(picking = false, back = 'home') {
       <div class="dex-tabs">
         <button class="dex-tab" data-lv="0">All</button>
         ${[1, 2, 3, 4].map((lv) => `<button class="dex-tab lv-${lv}" data-lv="${lv}">Level ${lv} <small>${caughtInLevel(lv)}/${LEVEL_POKEMON[lv].length}</small></button>`).join('')}
+        <button class="dex-tab lv-6" data-lv="6">🥚 PokeSpell <small>${caughtInLevel(6)}/${LEVEL_POKEMON[6].length}</small></button>
         <button class="dex-tab lv-5" data-lv="5">✨ Legendary Pokémon <small>${caughtInLevel(5)}/${LEVEL_POKEMON[5].length}</small></button>
       </div>
       <div class="dex-grid">
         ${DEX_IDS.map((id) => {
           const m = DEX[id], n = save.caught[m.id];
           return `<button class="dex-cell ${n ? 'have' : 'missing'}" data-id="${m.id}" data-lv="${LEVEL_OF[m.id]}" ${n ? '' : 'disabled'}>
-            <span class="dex-lv lv-${LEVEL_OF[m.id]}">${LEVEL_OF[m.id] === LEGENDARY_GROUP ? '✨' : LEVEL_OF[m.id]}</span>
+            <span class="dex-lv lv-${LEVEL_OF[m.id]}">${LEVEL_OF[m.id] === LEGENDARY_GROUP ? '✨' : LEVEL_OF[m.id] === SPELL_GROUP ? '🥚' : LEVEL_OF[m.id]}</span>
             <span class="dex-no">#${String(m.id).padStart(3, '0')}</span>
             ${m.id === save.partner.id ? '<span class="dex-star">⭐</span>' : ''}
             ${m.id === save.active ? '<span class="dex-using">Using</span>' : ''}
@@ -1134,7 +1137,7 @@ function screenDex(picking = false, back = 'home') {
     const moves = movesFor(m.id);
     const go = await modal(`<div class="sprite modal-sprite bob">${monSVG(m)}</div><h2>${m.name}${m.id === save.partner.id ? ' ⭐' : ''}</h2>
       <div class="pill-row">${m.types.map((t) => `<span class="type-pill t-${t}">${TYPE_LABEL[t]}</span>`).join('')}</div>
-      <p>Rank ${me.rank} <span class="stars">${'★'.repeat(me.rank)}<span class="off">${'★'.repeat(5 - me.rank)}</span></span> · ${LEVEL_OF[m.id] === LEGENDARY_GROUP ? 'Won in a PokeRead tournament ✨' : `Found in Level ${LEVEL_OF[m.id]}`}</p>
+      <p>Rank ${me.rank} <span class="stars">${'★'.repeat(me.rank)}<span class="off">${'★'.repeat(5 - me.rank)}</span></span> · ${LEVEL_OF[m.id] === LEGENDARY_GROUP ? 'Won in a PokeRead tournament ✨' : LEVEL_OF[m.id] === SPELL_GROUP ? 'Hatched in the PokeSpell lab 🥚' : `Found in Level ${LEVEL_OF[m.id]}`}</p>
       <div class="moves modal-moves">${moves.map((mv, i) => `<span class="move-chip t-${mv.type}${i < me.rank ? '' : ' locked'}">${i < me.rank ? '' : '🔒 '}${mv.name}</span>`).join('')}</div>`,
       using ? [{ label: 'Close', value: 0, cls: 'grey' }, { label: '✅ Using now', value: 0, cls: 'green' }]
             : [{ label: 'Close', value: 0, cls: 'grey' }, { label: `Use ${m.name}`, value: 1, cls: 'green' }]);
