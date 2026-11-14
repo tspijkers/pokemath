@@ -657,7 +657,8 @@ function learnWords(panel, words, tok) {
   });
 }
 
-// Quiz: every word must be read correctly. Missed words come back once more at the end.
+// Quiz: every word must be read right on the FIRST try. A missed word is retried until right,
+// then comes back (one word later) until it is read right the first time.
 function wordQuiz(panel, words, pool, title, tok, onProgress, onAnswer) {
   return new Promise((resolve) => {
     const queue = shuffle(words), repeated = new Set();
@@ -673,8 +674,8 @@ function wordQuiz(panel, words, pool, title, tok, onProgress, onAnswer) {
         <div class="rq">
           <div class="quiz-head"><div class="quiz-title">${title}</div><div class="rq-count">${doneCount} / ${words.length} ✓</div></div>
           ${type === 'pic'
-            ? `<div class="rq-prompt">Read the word. Tap its picture!</div>${wordBig(w)}`
-            : `<div class="rq-prompt">Listen, then tap the word!</div><div class="btn-row"><button class="btn blue big rq-listen">🔊 Hear it</button><button class="btn blue big slow-btn rq-slow" aria-label="Say it slowly">🐢 Slow</button></div>`}
+            ? `<div class="rq-prompt">${repeated.has(w) ? '🔁 This one again! ' : ''}Read the word. Tap its picture!</div>${wordBig(w)}`
+            : `<div class="rq-prompt">${repeated.has(w) ? '🔁 This one again! ' : ''}Listen, then tap the word!</div><div class="btn-row"><button class="btn blue big rq-listen">🔊 Hear it</button><button class="btn blue big slow-btn rq-slow" aria-label="Say it slowly">🐢 Slow</button></div>`}
           <div class="rq-options ${type}">
             ${opts.map((o) => `<button class="rq-opt" data-w="${o}">${type === 'pic' ? picSVG(o) : o}</button>`).join('')}
           </div>
@@ -697,7 +698,7 @@ function wordQuiz(panel, words, pool, title, tok, onProgress, onAnswer) {
           if (type === 'listen') sayWord(w);
           onAnswer && onAnswer(true);
           recordItem('words', w, !missed);
-          if (missed && !repeated.has(w)) { repeated.add(w); queue.push(w); }
+          if (missed) { repeated.add(w); queue.splice(Math.min(1, queue.length), 0, w); }
           else { doneCount++; onProgress && onProgress(doneCount); }
           setTimeout(next, 900);
         } else {
