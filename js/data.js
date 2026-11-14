@@ -112,6 +112,32 @@ function movesFor(id) {
 // Pokémon from higher Level groups are a bit stronger (HP and hit power).
 const GROUP_BONUS = { 1: 1, 2: 1.06, 3: 1.12, 4: 1.2, 5: 1.25 };
 
+// Type matchups: attacking type → types it is strong / weak against.
+// Strong = +10% damage, weak = −10% (never more than that, even for two-type Pokémon).
+const TYPE_STRONG = {
+  fire: ['grass', 'bug', 'ice'], water: ['fire', 'ground', 'rock'], grass: ['water', 'ground', 'rock'],
+  electric: ['water', 'flying'], ice: ['grass', 'ground', 'flying', 'dragon'], fighting: ['normal', 'rock', 'ice'],
+  poison: ['grass', 'bug'], ground: ['fire', 'electric', 'poison', 'rock'], flying: ['grass', 'fighting', 'bug'],
+  psychic: ['fighting', 'poison'], bug: ['grass', 'psychic', 'poison'], rock: ['fire', 'ice', 'flying', 'bug'],
+  ghost: ['ghost', 'psychic'], dragon: ['dragon'],
+};
+const TYPE_WEAK = {
+  normal: ['rock', 'ghost'], fire: ['fire', 'water', 'rock', 'dragon'], water: ['water', 'grass', 'dragon'],
+  grass: ['fire', 'grass', 'poison', 'flying', 'bug', 'dragon'], electric: ['electric', 'grass', 'ground', 'dragon'],
+  ice: ['water', 'ice'], fighting: ['poison', 'flying', 'psychic', 'bug', 'ghost'], poison: ['poison', 'ground', 'rock', 'ghost'],
+  ground: ['grass', 'bug', 'flying'], flying: ['electric', 'rock'], psychic: ['psychic'], bug: ['fire', 'fighting', 'flying', 'ghost'],
+  rock: ['fighting', 'ground'], ghost: ['normal'], dragon: [],
+};
+const TYPE_EDGE = 0.1;
+function typeMultiplier(atkType, defTypes) {
+  let m = 1;
+  for (const d of defTypes) {
+    if ((TYPE_STRONG[atkType] || []).includes(d)) m *= 1 + TYPE_EDGE;
+    if ((TYPE_WEAK[atkType] || []).includes(d)) m *= 1 - TYPE_EDGE;
+  }
+  return Math.min(1 + TYPE_EDGE, Math.max(1 - TYPE_EDGE, m));
+}
+
 // What wild / trainer Pokémon use when they fight back
 const FOE_MOVE = {
   normal: 'Tackle', fire: 'Ember', water: 'Water Gun', grass: 'Vine Whip', electric: 'Thunder Shock',
