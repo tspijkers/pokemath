@@ -567,3 +567,13 @@ h1, h2, p { margin: 0; }
 @media (max-aspect-ratio: 1/1), (max-width: 760px) { .parent-grid { grid-template-columns: 1fr; } }
 .quiz.again .problem { box-shadow: 0 0 0 4px #f59e0b; }
 .quiz.again .quiz-title::after { content: ' · 🔁 this one again!'; color: #b45309; }
+
+/* ---------- trainer tag on the battle field ---------- */
+.trainer-tag { position: absolute; top: 10px; right: 10px; z-index: 4; display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,.95); border-radius: 999px; padding: 4px 14px 4px 4px; box-shadow: 0 3px 0 rgba(0,0,0,.12); }
+.tag-face { width: 44px; height: 44px; border-radius: 50%; background: #eef6ff; overflow: hidden; }
+.tag-text { display: flex; flex-direction: column; line-height: 1.15; }
+.tag-text b { font-size: 1rem; font-weight: 900; }
+.tag-text span { display: flex; gap: 3px; margin-top: 2px; }
+.tag-ball { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink); background: linear-gradient(#ef4444 50%, #fff 50%); }
+.tag-ball.out { background: #cbd5e1; opacity: .7; }
+.foe-side { padding-top: 60px; }
