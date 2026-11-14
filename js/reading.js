@@ -696,6 +696,7 @@ function wordQuiz(panel, words, pool, title, tok, onProgress, onAnswer) {
           fb.textContent = pick(PRAISE); fb.className = 'feedback good';
           if (type === 'listen') sayWord(w);
           onAnswer && onAnswer(true);
+          recordItem('words', w, !missed);
           if (missed && !repeated.has(w)) { repeated.add(w); queue.push(w); }
           else { doneCount++; onProgress && onProgress(doneCount); }
           setTimeout(next, 900);
@@ -727,7 +728,9 @@ async function screenStop(r, s) {
   const panel = $('.panel');
   await learnWords(panel, words, tok);
   if (!alive(tok)) return;
-  await wordQuiz(panel, words, wordsUpTo(r), `${J.stops[s]}`, tok);
+  const learned = new Set(wordsUpTo(r));
+  const review = trickyList(save, 'words').map((t) => t.key).filter((w) => learned.has(w) && !words.includes(w)).slice(0, 2);
+  await wordQuiz(panel, [...words, ...review], wordsUpTo(r), `${J.stops[s]}${review.length ? ' + review' : ''}`, tok);
   if (!alive(tok)) return;
   const first = save.reading.stops[r] === s;
   save.reading.stops[r] = Math.max(save.reading.stops[r], s + 1);
@@ -944,7 +947,11 @@ function startTourneyBattle(t, allyId) {
     mode: 'trainer', trainer: opp.name, foes, allyId, back: 'reading',
     party: Object.keys(save.team).map(Number), foePower: TOURNEY_HIT[round],
     title: `🏆 ${ROUND_NAMES[round]}`,
-    ask: (panel, move, tok) => wordQuiz(panel, shuffle(words).slice(0, TOURNEY_QUESTIONS), words, `Read to power up <b>${move.name}</b>!`, tok),
+    ask: (panel, move, tok) => {
+      const tricky = shuffle(trickyList(save, 'words').map((t) => t.key).filter((w) => words.includes(w))).slice(0, 1);
+      const rest = shuffle(words.filter((w) => !tricky.includes(w))).slice(0, TOURNEY_QUESTIONS - tricky.length);
+      return wordQuiz(panel, shuffle([...tricky, ...rest]), words, `Read to power up <b>${move.name}</b>!`, tok);
+    },
     onRun: () => screenTournament(t),
     onWin: (panel, pm) => tourneyRoundWon(t, round, panel, pm),
   });
