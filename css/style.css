@@ -540,3 +540,28 @@ h1, h2, p { margin: 0; }
 .switch-mon-btn { flex: 0 0 auto; }
 .mini-hp { width: 80%; height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden; margin-top: 4px; }
 .mini-hp div { height: 100%; } .mini-hp .green { background: var(--green); } .mini-hp .yellow { background: #facc15; } .mini-hp .red { background: var(--red); }
+
+/* ---------- parent page ---------- */
+.parent-btn { margin-top: 6px; }
+.parent-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.parent-tab { border: 3px solid var(--pc); border-radius: 999px; padding: 8px 18px; font-size: 1.1rem; font-weight: 900; background: #fff; }
+.parent-tab.on { background: var(--pc); color: #fff; }
+.parent-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.parent-card { padding: 16px 20px; display: flex; flex-direction: column; gap: 8px; }
+.parent-card.wide { grid-column: 1 / -1; }
+.parent-card h2 { font-size: 1.8rem; font-weight: 900; }
+.parent-card h3 { margin: 0; font-size: 1.2rem; font-weight: 900; }
+.parent-card h3 small { font-weight: 700; color: var(--muted); font-size: .9rem; margin-left: 6px; }
+.stat-row { display: flex; justify-content: space-between; font-size: 1.1rem; border-bottom: 1px solid #eef0f4; padding: 4px 0; }
+.stat-row span { color: var(--muted); font-weight: 700; }
+.week-bars { display: flex; align-items: flex-end; gap: 8px; height: 150px; }
+.week-bar { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 4px; }
+.week-bar .bar { width: 70%; min-height: 3px; background: var(--blue); border-radius: 6px 6px 0 0; }
+.bar-val { font-size: .85rem; font-weight: 800; color: var(--muted); }
+.bar-day { font-size: .85rem; font-weight: 800; }
+.tricky-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.tricky-chip { background: #fff7ed; border: 2px solid #fdba74; border-radius: 14px; padding: 6px 12px; font-size: .95rem; font-weight: 700; color: var(--muted); }
+.tricky-chip b { font-size: 1.25rem; color: var(--ink); margin-right: 4px; }
+.muted { color: var(--muted); font-weight: 700; }
+.parent-note { text-align: center; }
+@media (max-aspect-ratio: 1/1), (max-width: 760px) { .parent-grid { grid-template-columns: 1fr; } }
