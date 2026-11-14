@@ -165,9 +165,11 @@ function screenLab() {
           <h2>${allDone ? 'All eggs hatched!' : sp.stage < 4 ? 'Warm up the egg!' : 'It\'s wobbling!'}</h2>
           <p>${stageText}</p>
           ${allDone ? '' : `<button class="btn green big" id="warm">${sp.stage < 4 ? '🔥 Warm it up' : '🐣 Hatch it!'}</button>`}
+          ${isTester() && !allDone && sp.stage < 4 ? '<button class="btn blue" id="hatch-now">🐣 Hatch now (tester)</button>' : ''}
+          ${isTester() ? '<p class="tester-note">🔓 Tester: tap any egg to work on it.</p>' : ''}
           <div class="incubator">
             <div class="incubator-title">🥚 Egg incubator <small>${eggsHatched()} of ${EGG_IDS.length} hatched</small></div>
-            <div class="nest-grid">${EGG_IDS.map((id, k) => nestCell(k, sp.hatched[k] ? 'hatched' : k === i && !allDone ? 'current' : k > i ? 'locked' : 'waiting', k === i ? sp.stage : 0)).join('')}</div>
+            <div class="nest-grid">${EGG_IDS.map((id, k) => nestCell(k, sp.hatched[k] ? 'hatched' : k === i && !allDone ? 'current' : k > i && !isTester() ? 'locked' : 'waiting', k === i ? sp.stage : 0)).join('')}</div>
           </div>
         </div>
       </div>
@@ -175,6 +177,11 @@ function screenLab() {
   $('#lab-dex').addEventListener('click', () => { Sound.tap(); screenDex(false, 'lab'); });
   $('#lab-stickers').addEventListener('click', () => { Sound.tap(); screenStickers('lab'); });
   $('#warm')?.addEventListener('click', () => { Sound.tap(); sp.stage < 4 ? screenWarmUp(i, sp.stage) : screenHatch(i); });
+  $('#hatch-now')?.addEventListener('click', () => { Sound.tap(); screenHatch(i); });
+  if (isTester()) $$('.nest').forEach((n, k) => n.addEventListener('click', () => {
+    if (sp.hatched[k] || k === sp.egg) return;
+    Sound.tap(); sp.egg = k; sp.stage = 0; persist(); screenLab();
+  }));
   showStickerPopups();
 }
 
