@@ -627,3 +627,7 @@ h1, h2, p { margin: 0; }
 .sentence-btn.done { animation: none; background: #fff; box-shadow: 0 4px 0 #cbd5e1; }
 .read-sentence { text-align: center; font-size: clamp(2rem, 4.6vw, 3rem); font-weight: 900; line-height: 1.25; background: #f6f9ff; border-radius: 22px; padding: 14px 18px; font-family: "Andika", "Comic Sans MS", var(--font); }
 .scene-options .rq-opt { padding: 6px; }
+.move-btn { position: relative; }
+.mv-edge { position: absolute; top: 6px; right: 8px; font-size: .75rem; font-weight: 900; border-radius: 999px; padding: 2px 8px; text-shadow: none; }
+.mv-edge.strong { background: #fff; color: #16a34a; }
+.mv-edge.weak { background: rgba(255,255,255,.8); color: #64748b; }
