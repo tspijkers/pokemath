@@ -669,19 +669,23 @@ function retrigger(el, cls) {
 // ---------- the battle ----------
 // cfg: { mode: 'wild' | 'trainer', foes: [...], trainer?: name,
 //        allyId?: Pokémon to use (default: the active one), ask?: (panel, move, tok) => mistakes,
-//        title?, back?: 'home' | 'reading', onWin?: (panel, pm) => void, onRun?: () => void }
+//        title?, back?: 'home' | 'reading', onWin?: (panel, pm) => void, onRun?: () => void,
+//        party?: ids he may switch between, foePower?: base hit size (tournaments; perfect answers still always win) }
 async function runBattle(cfg) {
   const isWild = cfg.mode === 'wild';
   const tok = show(battleShell(cfg.title || (isWild ? 'Catch' : 'Battle'), cfg.back || 'home'));
   const panel = $('.panel'), foeSide = $('.foe-side'), allySide = $('.ally-side');
   const foeSprite = $('.foe-sprite'), allySprite = $('.ally-sprite');
-  const allyId = cfg.allyId || save.active;
-  const pm = DEX[allyId];
-  const allyRank = save.team[allyId].rank;
-  const allyMoves = movesFor(allyId).slice(0, allyRank);
-  const bonus = groupBonus(pm.id);
-  const ally = { maxHp: Math.round((70 + 10 * allyRank) * bonus) };
-  ally.hp = ally.maxHp;
+  // The player's side: one Pokémon at a time, optionally a party to switch between.
+  const party = cfg.party ? cfg.party.filter((id) => save.team[id]) : null;
+  const hpOf = {};
+  const maxHpFor = (id) => Math.round((70 + 10 * save.team[id].rank) * groupBonus(id));
+  const stateOf = (id) => (hpOf[id] ||= { maxHp: maxHpFor(id), hp: maxHpFor(id) });
+  let allyId, pm, allyRank, allyMoves, bonus, ally;
+  const setAlly = (id) => { allyId = id; pm = DEX[id]; allyRank = save.team[id].rank; allyMoves = movesFor(id).slice(0, allyRank); bonus = groupBonus(id); ally = stateOf(id); };
+  setAlly(cfg.allyId || save.active);
+  const aliveOthers = () => (party || []).filter((id) => id !== allyId && stateOf(id).hp > 0);
+  const teamHpLeft = () => (party ? party.reduce((sum, id) => sum + Math.max(0, stateOf(id).hp), 0) : ally.hp);
   const foes = cfg.foes.map((f) => ({ ...f, hp: f.maxHp }));
   let fi = 0;
   const foe = () => foes[fi];
@@ -722,6 +726,12 @@ async function runBattle(cfg) {
       return;
     }
     if (action === 'catch') { await doCatch(); return; }
+    if (action === 'switch') {
+      const id = await pickPartyMember(false);
+      if (!alive(tok)) return;
+      if (id) await bringIn(id, true);
+      continue;
+    }
 
     // --- solve problems to power the move ---
     const move = action;
@@ -765,10 +775,19 @@ async function runBattle(cfg) {
       if (!alive(tok)) return;
     }
 
-    // --- they fight back (only hard if there were mistakes) ---
+    // --- they fight back ---
     const fm = FOE_MOVE[foe().mon.types[0]];
-    // Stronger foes hit a little harder, but perfect answers always keep the player safe.
-    const back = (isWild ? 3 + foe().level : 4) + 7 * Math.min(mistakes, 4);
+    let back;
+    if (cfg.foePower) {
+      // Tournament hits are real, but sized so perfect answers can never knock out the whole team:
+      // spread the team's remaining HP over the most enemy hits that could still come (our weakest hit is 18+).
+      const turnsLeft = Math.ceil(foe().hp / 18) + foes.slice(fi + 1).reduce((sum, f) => sum + Math.max(0, Math.ceil(f.hp / 18) - 1), 0);
+      const safe = Math.floor((teamHpLeft() - 1) / Math.max(1, turnsLeft));
+      back = Math.max(0, Math.min(cfg.foePower + rand(-2, 2), safe)) + 7 * Math.min(mistakes, 4);
+    } else {
+      // Stronger foes hit a little harder, but perfect answers always keep the player safe.
+      back = (isWild ? 3 + foe().level : 4) + 7 * Math.min(mistakes, 4);
+    }
     await say(panel, `${foe().mon.name} used <b>${fm}</b>!`, 900);
     if (!alive(tok)) return;
     retrigger(foeSprite, 'lunge-left');
@@ -777,15 +796,55 @@ async function runBattle(cfg) {
     burst(allySide, foe().mon.types[0]);
     retrigger(allySprite, 'hit');
     ally.hp = Math.max(0, ally.hp - back);
-    floatText(allySide, `-${back}`, 'dmg');
+    floatText(allySide, back ? `-${back}` : 'Missed!', 'dmg');
     drawAlly();
     await wait(700);
     if (!alive(tok)) return;
-    if (mistakes === 0) {
+    if (mistakes === 0 && !cfg.foePower) {
       await say(panel, `${pm.name} hardly felt it! Perfect ${cfg.ask ? 'reading' : 'math'}! ⭐`, 1300);
       if (!alive(tok)) return;
     }
-    if (ally.hp <= 0) return battleLost();
+    if (ally.hp <= 0) {
+      allySprite.classList.add('faint');
+      await say(panel, `${pm.name} fainted!`, 1300);
+      if (!alive(tok)) return;
+      if (aliveOthers().length) {
+        const id = await pickPartyMember(true);
+        if (!alive(tok)) return;
+        await bringIn(id, false);
+        continue;
+      }
+      return battleLost();
+    }
+  }
+
+  // Swap the Pokémon on the field (free: the other side doesn't get an extra attack).
+  async function bringIn(id, recall) {
+    if (recall) { await say(panel, `Come back, <b>${pm.name}</b>!`, 900); if (!alive(tok)) return; }
+    setAlly(id);
+    allySprite.innerHTML = monSVG(pm);
+    allySprite.className = 'sprite ally-sprite enter-left';
+    drawAlly();
+    await say(panel, `Go, <b>${pm.name}</b>!`, 1000);
+  }
+
+  function pickPartyMember(forced) {
+    return new Promise((resolve) => {
+      const ids = aliveOthers().sort((a, b) => save.team[b].rank - save.team[a].rank || a - b);
+      const el = document.createElement('div');
+      el.className = 'modal-back';
+      el.innerHTML = `<div class="modal fighter-modal"><h2>${forced ? 'Who goes next?' : 'Switch Pokémon'}</h2>
+        <div class="fighter-grid">${ids.map((id) => { const st = stateOf(id); const pct = Math.round((st.hp / st.maxHp) * 100);
+          return `<button class="fighter" data-id="${id}"><div class="sprite">${monSVG(DEX[id])}</div><b>${DEX[id].name}</b><span>${'★'.repeat(save.team[id].rank)}</span>
+            <div class="mini-hp"><div style="width:${pct}%" class="${pct > 50 ? 'green' : pct > 25 ? 'yellow' : 'red'}"></div></div></button>`; }).join('')}</div>
+        ${forced ? '' : '<div class="modal-buttons"><button class="btn grey" data-x="1">Keep ' + pm.name + '</button></div>'}</div>`;
+      document.body.appendChild(el);
+      el.addEventListener('click', (e) => {
+        const f = e.target.closest('.fighter'), x = e.target.closest('[data-x]');
+        if (!f && !x) return;
+        Sound.tap(); el.remove(); resolve(f ? +f.dataset.id : null);
+      });
+    });
   }
 
   function chooseAction() {
@@ -799,6 +858,7 @@ async function runBattle(cfg) {
           </div>
           <div class="extra-row">
             ${isWild ? `<button class="btn catch-btn ${canCatch ? 'ready' : ''}" data-a="catch" ${canCatch ? '' : 'disabled'}>${ballSVG()} ${canCatch ? 'Throw Poké Ball!' : 'Catch when HP is under 20'}</button>` : ''}
+            ${party && aliveOthers().length ? '<button class="btn blue switch-mon-btn" data-a="switch">🔄 Switch</button>' : ''}
             <button class="btn grey run-btn" data-a="run">🏃 Run</button>
           </div>
         </div>`;
