@@ -694,3 +694,8 @@ h1, h2, p { margin: 0; }
 .big-nest-back, .big-nest-front { position: absolute; left: 0; bottom: -6%; width: 100%; height: auto; }
 .big-nest-front { z-index: 2; }
 @media (max-width: 760px) { .nest-grid { grid-template-columns: repeat(4, 1fr); } }
+.tester-tag { align-self: center; background: #fef3c7; color: #92400e; border: 2px dashed #d97706; border-radius: 999px; padding: 4px 12px; font-weight: 900; font-size: .9rem; }
+.menu-top { align-items: center; gap: 10px; }
+.tester-note { font-size: .95rem !important; color: #b45309 !important; }
+.bracket-row.open { cursor: pointer; border-style: dashed; }
+.nest.waiting { cursor: pointer; }
