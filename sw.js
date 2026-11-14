@@ -1,9 +1,9 @@
 // Offline support: cache the whole app so it works without internet.
 // Bump VERSION whenever files change so the iPad picks up the update.
-const VERSION = 'pokemath-v31';
+const VERSION = 'pokemath-v32';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
-  'js/data.js', 'js/art.js', 'js/mons.js', 'js/legends.js', 'js/app.js', 'js/reading.js', 'js/stickers.js', 'js/sentences.js',
+  'js/data.js', 'js/art.js', 'js/mons.js', 'js/legends.js', 'js/app.js', 'js/reading.js', 'js/stickers.js', 'js/sentences.js', 'js/spell.js',
   'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
 ];
 
