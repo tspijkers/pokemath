@@ -221,11 +221,15 @@ function makeProblem() {
   return p;
 }
 
-// Shows `count` problems in `host`. Wrong answers just try again.
+// Shows problems in `host` until `count` were answered right on the FIRST try.
+// A missed problem is retried until right, then the exact same problem comes back
+// (one problem later) and only counts once it is answered right the first time.
 // Resolves with the number of wrong tries.
 function solveProblems(host, { count = 5, title = '' } = {}) {
   return new Promise((resolve) => {
     let i = 0, mistakes = 0, input = '', p = makeProblem(), busy = false, missedThis = false;
+    const comeback = []; // missed problems that must be answered right first time
+    let isComeback = false;
     host.innerHTML = `
       <div class="quiz">
         <div class="quiz-head">
@@ -248,6 +252,7 @@ function solveProblems(host, { count = 5, title = '' } = {}) {
     const dots = $$('.dot', host);
     const render = () => {
       eq.textContent = `${p.a} ${OP_SIGN[p.op]} ${p.b} =`;
+      quiz.classList.toggle('again', isComeback);
       ans.textContent = input || '?';
       ans.classList.toggle('empty', !input);
       dots.forEach((d, k) => { d.classList.toggle('done', k < i); d.classList.toggle('current', k === i); });
@@ -259,10 +264,14 @@ function solveProblems(host, { count = 5, title = '' } = {}) {
         fb.textContent = pick(PRAISE); fb.className = 'feedback good';
         ans.classList.add('right');
         recordItem('facts', `${p.a}${p.op}${p.b}`, !missedThis);
-        i++; render();
+        if (missedThis) comeback.push(p); else i++;
+        render();
         setTimeout(() => {
-          if (i >= count) { cleanup(); resolve(mistakes); return; }
-          p = makeProblem(); input = ''; missedThis = false;
+          if (i >= count && !comeback.length) { cleanup(); resolve(mistakes); return; }
+          // the same problem comes back after one other problem (or right away if no new ones are needed)
+          if (comeback.length && (!missedThis || i >= count)) { p = comeback.shift(); isComeback = true; }
+          else { p = makeProblem(); isComeback = false; }
+          input = ''; missedThis = false;
           ans.classList.remove('right');
           fb.innerHTML = '&nbsp;'; fb.className = 'feedback';
           busy = false; render();
