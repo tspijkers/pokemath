@@ -1075,10 +1075,10 @@ function screenBattle() {
 }
 
 // ---------- collection ----------
-function screenDex(picking = false) {
+function screenDex(picking = false, back = 'home') {
   show(`
     <div class="screen dex${picking ? ' picking' : ''}">
-      ${topbar(picking ? 'Who do you want to use?' : `My Pokémon — ${caughtCount()} of ${DEX_COUNT}`)}
+      ${topbar(picking ? 'Who do you want to use?' : `My Pokémon — ${caughtCount()} of ${DEX_COUNT}`, back)}
       <div class="dex-progress"><div style="width:${(caughtCount() / DEX_COUNT) * 100}%"></div></div>
       <div class="dex-tabs">
         <button class="dex-tab" data-lv="0">All</button>
