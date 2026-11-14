@@ -601,3 +601,23 @@ h1, h2, p { margin: 0; }
 .rp-text small { font-size: .8rem; font-weight: 700; color: var(--muted); }
 .reading .topbar .dex-btn { font-size: 1rem; min-height: 48px; padding: 8px 14px; }
 @media (max-width: 760px) { .rp-chapter { grid-template-columns: 1fr 1fr 1fr; } .rp-label { grid-column: 1 / -1; justify-content: flex-start; } }
+
+/* ---------- sticker book ---------- */
+.sticker-btn { --b: #fff7cc; --bd: #eab308; }
+.sticker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+.sticker-cell { border: none; background: rgba(255,255,255,.75); border-radius: 20px; padding: 10px 8px 12px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; box-shadow: 0 4px 0 rgba(0,0,0,.08); }
+.sticker-cell.got { background: #fff; box-shadow: 0 4px 0 rgba(0,0,0,.12); }
+.sticker-cell b { font-size: 1rem; font-weight: 900; }
+.sticker-cell small { font-size: .78rem; font-weight: 700; color: var(--muted); line-height: 1.2; }
+.sticker-cell:not(.got) b { color: var(--grey-d); }
+.sticker-art { width: 92px; height: 92px; }
+.sticker-art svg { width: 100%; height: 100%; }
+.sticker-art.big { width: 150px; height: 150px; margin: 0 auto; }
+.sticker-art.pop { animation: badge-pop .8s cubic-bezier(.2, 1.5, .4, 1); }
+.new-stickers { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.new-sticker { display: flex; flex-direction: column; align-items: center; width: 120px; text-align: center; }
+.new-sticker small { color: var(--muted); font-weight: 700; font-size: .78rem; }
+.parent-sticker-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.ps { width: 44px; height: 44px; }
+.ps svg { width: 100%; height: 100%; }
+@media (max-width: 760px) { .sticker-grid { grid-template-columns: repeat(3, 1fr); } .sticker-art { width: 76px; height: 76px; } }
