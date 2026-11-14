@@ -759,7 +759,7 @@ async function runBattle(cfg) {
 
     if (!isWild && foe().hp <= 0) {
       foeSprite.classList.add('faint');
-      await say(panel, `${foe().mon.name} fainted!`, 1300);
+      await say(panel, `${foe().mon.name} is unable to battle!`, 1300);
       if (!alive(tok)) return;
       if (fi < foes.length - 1) {
         fi++;
@@ -806,7 +806,7 @@ async function runBattle(cfg) {
     }
     if (ally.hp <= 0) {
       allySprite.classList.add('faint');
-      await say(panel, `${pm.name} fainted!`, 1300);
+      await say(panel, `${pm.name} is unable to battle!`, 1300);
       if (!alive(tok)) return;
       if (aliveOthers().length) {
         const id = await pickPartyMember(true);
