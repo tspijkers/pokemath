@@ -885,9 +885,9 @@ const TOURNAMENTS = [
   { regions: [0, 1], champion: 'Oliver', prize: 145 },          // Zapdos
   { regions: [2, 3], champion: 'Hayden', prize: 146 },          // Moltres
   { regions: [4, 5], champion: 'Lob', prize: 144 },             // Articuno
-  { regions: [6, 7], champion: 'Korrina', prize: null },        // prize still to be chosen
-  { regions: [8, 9], champion: 'Tommy The Great', prize: null },
-  { regions: [10, 11], champion: 'Leon', prize: null },
+  { regions: [6, 7], champion: 'Korrina', prize: 152 },         // Tidalon
+  { regions: [8, 9], champion: 'Tommy The Great', prize: 153 }, // Magmor
+  { regions: [10, 11], champion: 'Leon', prize: 154 },          // Skyvern
 ];
 const ROUND_NAMES = ['Quarter Final', 'Semi Final', 'Final'];
 const TOURNEY_QUESTIONS = 3;
