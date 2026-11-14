@@ -577,3 +577,27 @@ h1, h2, p { margin: 0; }
 .tag-ball { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink); background: linear-gradient(#ef4444 50%, #fff 50%); }
 .tag-ball.out { background: #cbd5e1; opacity: .7; }
 .foe-side { padding-top: 60px; }
+
+/* ---------- compact region bar + all-regions overview ---------- */
+.region-nav { display: flex; align-items: center; gap: 10px; }
+.nav-arrow { border: none; width: 58px; height: 58px; border-radius: 18px; background: #fff; font-size: 1.4rem; color: var(--rc); box-shadow: 0 4px 0 #c7cad1; flex-shrink: 0; }
+.nav-arrow:active { transform: translateY(3px); box-shadow: 0 1px 0 #c7cad1; }
+.nav-arrow[disabled] { opacity: .35; }
+.region-current { flex: 1; border: none; border-radius: 18px; background: var(--rc); color: #fff; padding: 8px 16px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 4px 0 rgba(0,0,0,.2); }
+.rc-name { font-size: 1.6rem; font-weight: 900; line-height: 1.1; }
+.rc-sub { font-size: .9rem; font-weight: 700; opacity: .95; }
+.region-picker { width: min(860px, 100%); max-height: 92vh; overflow: auto; }
+.rp-chapters { display: flex; flex-direction: column; gap: 10px; }
+.rp-chapter { display: grid; grid-template-columns: 92px 1fr 1fr 1fr; gap: 8px; align-items: stretch; }
+.rp-label { display: flex; align-items: center; justify-content: center; font-weight: 900; color: var(--muted); font-size: .95rem; text-align: center; }
+.rp-card { border: 3px solid var(--rc, #f59e0b); border-radius: 16px; background: #fff; display: flex; align-items: center; gap: 8px; padding: 8px 10px; text-align: left; }
+.rp-card.here { background: color-mix(in srgb, var(--rc) 14%, white); }
+.rp-card.tourney { --rc: #f59e0b; border-style: dashed; }
+.rp-card[disabled] { opacity: .45; border-color: #cbd5e1; }
+.rp-icon { width: 36px; height: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+.rp-icon svg { width: 34px; height: 34px; }
+.rp-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.rp-text b { font-size: 1.05rem; }
+.rp-text small { font-size: .8rem; font-weight: 700; color: var(--muted); }
+.reading .topbar .dex-btn { font-size: 1rem; min-height: 48px; padding: 8px 14px; }
+@media (max-width: 760px) { .rp-chapter { grid-template-columns: 1fr 1fr 1fr; } .rp-label { grid-column: 1 / -1; justify-content: flex-start; } }
