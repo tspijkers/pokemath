@@ -532,6 +532,34 @@ const currentJourney = () => { const r = ensureReading(); const i = r.badges.fin
 const badgeCount = () => (save && save.reading ? save.reading.badges.filter(Boolean).length : 0);
 let readingView = null;
 
+// ---------- all regions overview (6 chapters: 2 regions + a tournament each) ----------
+function openRegionPicker(current) {
+  const el = document.createElement('div');
+  el.className = 'modal-back';
+  const regionCard = (i) => {
+    const j = JOURNEYS[i], open = journeyUnlocked(i), won = save.reading.badges[i], stops = Math.min(4, save.reading.stops[i] || 0);
+    return `<button class="rp-card${i === current ? ' here' : ''}" data-r="${i}" style="--rc:${j.color}" ${open ? '' : 'disabled'}>
+      <span class="rp-icon">${won ? badgeSVG(j.shape, j.badgeColor) : open ? '🗺️' : '🔒'}</span>
+      <span class="rp-text"><b>${j.name}</b><small>${won ? j.badge : open ? `${stops} of 4 stops` : 'Locked'}</small></span></button>`;
+  };
+  const tourneyCard = (t) => {
+    const open = tourneyOpen(t), won = tourneyState(t).won, prize = TOURNAMENTS[t].prize;
+    return `<button class="rp-card tourney" data-t="${t}" ${open ? '' : 'disabled'}>
+      <span class="rp-icon">${won ? '🏆' : open ? '⚔️' : '🔒'}</span>
+      <span class="rp-text"><b>Tournament ${t + 1}</b><small>${won ? (prize ? `Won ${DEX[prize].name}!` : 'Champion!') : open ? 'Open!' : 'Needs both badges'}</small></span></button>`;
+  };
+  el.innerHTML = `<div class="modal region-picker"><h2>All regions</h2>
+    <div class="rp-chapters">${TOURNAMENTS.map((T, t) => `<div class="rp-chapter"><div class="rp-label">Chapter ${t + 1}</div>${regionCard(T.regions[0])}${regionCard(T.regions[1])}${tourneyCard(t)}</div>`).join('')}</div>
+    <div class="modal-buttons"><button class="btn grey" data-x="1">Close</button></div></div>`;
+  document.body.appendChild(el);
+  el.addEventListener('click', (e) => {
+    const c = e.target.closest('.rp-card'), x = e.target.closest('[data-x]');
+    if ((!c || c.disabled) && !x && e.target !== el) return;
+    Sound.tap(); el.remove();
+    if (c && !c.disabled) { if (c.dataset.t !== undefined) screenTournament(+c.dataset.t); else screenReading(+c.dataset.r); }
+  });
+}
+
 // ---------- map ----------
 const pctX = (x) => (x / 240) * 100;
 function screenReading(r) {
@@ -554,12 +582,16 @@ function screenReading(r) {
       <header class="topbar">
         <div class="home-left"><button class="home-btn" data-go="menu" aria-label="Menu">🏠</button><h1 class="logo small">Poke<span>Read</span></h1></div>
         <div style="flex:1"></div>
+        <button class="btn dex-btn" id="read-dex">📖 My Pokémon <b>${caughtCount()}</b></button>
         <div class="badge-row">${JOURNEYS.map((j, i) => `<span class="badge-slot${save.reading.badges[i] ? ' got' : ''}">${save.reading.badges[i] ? badgeSVG(j.shape, j.badgeColor) : ''}</span>`).join('')}</div>
       </header>
-      <div class="region-tabs">
-        ${JOURNEYS.map((j, i) => `<button class="region-tab${i === r ? ' on' : ''}" data-r="${i}" style="--rc:${j.color}" ${journeyUnlocked(i) ? '' : 'disabled'}>${journeyUnlocked(i) ? '' : '🔒 '}${j.name}</button>` +
-          (i % 2 === 1 ? (() => { const t = (i - 1) / 2, open = tourneyOpen(t), won = tourneyState(t).won;
-            return `<button class="region-tab tourney-tab${won ? ' won' : ''}" data-t="${t}" ${open ? '' : 'disabled'}>${open ? (won ? '🏆✅' : '🏆') : '🔒🏆'} Tournament ${t + 1}</button>`; })() : '')).join('')}
+      <div class="region-nav" style="--rc:${J.color}">
+        <button class="nav-arrow" id="prev-r" ${r > 0 ? '' : 'disabled'} aria-label="Previous region">◀</button>
+        <button class="region-current" id="all-regions">
+          <span class="rc-name">${J.name}</span>
+          <span class="rc-sub">Chapter ${Math.floor(r / 2) + 1} · Region ${r + 1} of ${JOURNEYS.length} · <u>All regions</u></span>
+        </button>
+        <button class="nav-arrow" id="next-r" ${r < JOURNEYS.length - 1 && journeyUnlocked(r + 1) ? '' : 'disabled'} aria-label="Next region">▶</button>
       </div>
       <div class="map card" style="--rc:${J.color}">
         ${regionMapSVG(J)}
@@ -575,12 +607,10 @@ function screenReading(r) {
       </div>
       ${badge && r === JOURNEYS.length - 1 && !tourneyReady ? `<div class="map-info card">${info}</div>` : `<button class="map-info card go" id="next-step">${info} <span class="go-arrow">▶</span></button>`}
     </div>`);
-  $('.region-tabs').addEventListener('click', (e) => {
-    const t = e.target.closest('.region-tab');
-    if (!t || t.disabled) return;
-    Sound.tap();
-    if (t.dataset.t !== undefined) screenTournament(+t.dataset.t); else screenReading(+t.dataset.r);
-  });
+  $('#prev-r').addEventListener('click', () => { Sound.tap(); screenReading(r - 1); });
+  $('#next-r').addEventListener('click', () => { Sound.tap(); screenReading(r + 1); });
+  $('#all-regions').addEventListener('click', () => { Sound.tap(); openRegionPicker(r); });
+  $('#read-dex').addEventListener('click', () => { Sound.tap(); screenDex(false, 'reading'); });
   $('#next-step')?.addEventListener('click', () => {
     Sound.tap();
     if (tourneyReady) screenTournament(tIdx);
