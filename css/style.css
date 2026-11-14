@@ -565,3 +565,5 @@ h1, h2, p { margin: 0; }
 .muted { color: var(--muted); font-weight: 700; }
 .parent-note { text-align: center; }
 @media (max-aspect-ratio: 1/1), (max-width: 760px) { .parent-grid { grid-template-columns: 1fr; } }
+.quiz.again .problem { box-shadow: 0 0 0 4px #f59e0b; }
+.quiz.again .quiz-title::after { content: ' · 🔁 this one again!'; color: #b45309; }
