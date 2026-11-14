@@ -537,3 +537,6 @@ h1, h2, p { margin: 0; }
 .wild-rank { display: block; margin-top: 6px; font-size: 1.2rem; color: #f5b301; }
 .slow-btn { --b: #a7f3d0; --bd: #10b981; color: #065f46; }
 .rq .btn-row { margin-top: 0; }
+.switch-mon-btn { flex: 0 0 auto; }
+.mini-hp { width: 80%; height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden; margin-top: 4px; }
+.mini-hp div { height: 100%; } .mini-hp .green { background: var(--green); } .mini-hp .yellow { background: #facc15; } .mini-hp .red { background: var(--red); }
