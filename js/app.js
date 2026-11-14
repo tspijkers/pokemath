@@ -865,7 +865,8 @@ async function runBattle(cfg) {
     Sound.hit();
     burst(foeSide, move.type);
     retrigger(foeSprite, 'hit');
-    let dmg = Math.round(move.power * bonus) + rand(-2, 2);
+    const myEdge = typeMultiplier(move.type, foe().mon.types);
+    let dmg = Math.round(move.power * bonus * myEdge) + rand(-2, 2);
     const before = foe().hp;
     foe().hp -= dmg;
     if (isWild) foe().hp = Math.max(foe().hp, Math.min(before, rand(4, 9))); // wild Pokémon never faint, so they can be caught
@@ -873,6 +874,10 @@ async function runBattle(cfg) {
     drawFoe();
     await wait(700);
     if (!alive(tok)) return;
+    if (myEdge !== 1) {
+      await say(panel, myEdge > 1 ? `It's super effective! 💥` : `It's not very effective…`, 1100);
+      if (!alive(tok)) return;
+    }
 
     if (!isWild && foe().hp <= 0) {
       foeSprite.classList.add('faint');
@@ -894,16 +899,18 @@ async function runBattle(cfg) {
 
     // --- they fight back ---
     const fm = FOE_MOVE[foe().mon.types[0]];
+    const foeEdge = typeMultiplier(foe().mon.types[0], pm.types);
     let back;
     if (cfg.foePower) {
       // Tournament hits are real, but sized so perfect answers can never knock out the whole team:
       // spread the team's remaining HP over the most enemy hits that could still come (our weakest hit is 18+).
-      const turnsLeft = Math.ceil(foe().hp / 18) + foes.slice(fi + 1).reduce((sum, f) => sum + Math.max(0, Math.ceil(f.hp / 18) - 1), 0);
+      // (our weakest possible hit, even against a resisting type, is 16+)
+      const turnsLeft = Math.ceil(foe().hp / 16) + foes.slice(fi + 1).reduce((sum, f) => sum + Math.max(0, Math.ceil(f.hp / 16) - 1), 0);
       const safe = Math.floor((teamHpLeft() - 1) / Math.max(1, turnsLeft));
-      back = Math.max(0, Math.min(cfg.foePower + rand(-2, 2), safe)) + 7 * Math.min(mistakes, 4);
+      back = Math.max(0, Math.min(Math.round((cfg.foePower + rand(-2, 2)) * foeEdge), safe)) + 7 * Math.min(mistakes, 4);
     } else {
       // Stronger foes hit a little harder, but perfect answers always keep the player safe.
-      back = (isWild ? 3 + foe().level : 4) + 7 * Math.min(mistakes, 4);
+      back = Math.round(((isWild ? 3 + foe().level : 4) + 7 * Math.min(mistakes, 4)) * foeEdge);
     }
     await say(panel, `${foe().mon.name} used <b>${fm}</b>!`, 900);
     if (!alive(tok)) return;
@@ -971,7 +978,7 @@ async function runBattle(cfg) {
         <div class="choose-move">
           <div class="choose-title">What should ${pm.name} do?</div>
           <div class="move-grid">
-            ${allyMoves.map((mv, i) => `<button class="move-btn t-${mv.type}" data-i="${i}"><span class="mv-name">${mv.name}</span><span class="mv-power">${'💥'.repeat(1 + Math.floor((mv.power - 20) / 6))}</span></button>`).join('')}
+            ${allyMoves.map((mv, i) => { const e = typeMultiplier(mv.type, foe().mon.types); return `<button class="move-btn t-${mv.type}" data-i="${i}">${e > 1 ? '<span class="mv-edge strong">Strong!</span>' : e < 1 ? '<span class="mv-edge weak">Weak</span>' : ''}<span class="mv-name">${mv.name}</span><span class="mv-power">${'💥'.repeat(1 + Math.floor((mv.power - 20) / 6))}</span></button>`; }).join('')}
           </div>
           <div class="extra-row">
             ${isWild ? `<button class="btn catch-btn ${canCatch ? 'ready' : ''}" data-a="catch" ${canCatch ? '' : 'disabled'}>${ballSVG()} ${canCatch ? 'Throw Poké Ball!' : 'Catch when HP is under 20'}</button>` : ''}
