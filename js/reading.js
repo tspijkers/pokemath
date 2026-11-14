@@ -605,6 +605,7 @@ function screenReading(r) {
             <span class="node-icon">${icon}</span><span class="node-label">${label}</span></button>`;
         }).join('')}
         <div class="map-buddy sprite bob" style="left:${pctX(J.nodes[buddyAt][0])}%;top:${J.nodes[buddyAt][1]}%">${heroSVG()}</div>
+        ${badge ? `<button class="sentence-btn${sentenceDone(r) ? ' done' : ''}" id="sentences">📜 Sentence bonus${sentenceDone(r) ? ' ✅' : ''}</button>` : ''}
       </div>
       ${badge && r === JOURNEYS.length - 1 && !tourneyReady ? `<div class="map-info card">${info}</div>` : `<button class="map-info card go" id="next-step">${info} <span class="go-arrow">▶</span></button>`}
     </div>`);
@@ -613,6 +614,7 @@ function screenReading(r) {
   $('#all-regions').addEventListener('click', () => { Sound.tap(); openRegionPicker(r); });
   $('#read-dex').addEventListener('click', () => { Sound.tap(); screenDex(false, 'reading'); });
   $('#read-stickers').addEventListener('click', () => { Sound.tap(); screenStickers('reading'); });
+  $('#sentences')?.addEventListener('click', (e) => { e.stopPropagation(); Sound.tap(); screenSentences(r); });
   showStickerPopups();
   $('#next-step')?.addEventListener('click', () => {
     Sound.tap();
