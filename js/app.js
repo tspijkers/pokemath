@@ -360,6 +360,7 @@ function screenMenu() {
     </div>`);
   $('#settings').addEventListener('click', openSettings);
   $('#switch-player').addEventListener('click', () => { Sound.tap(); screenProfiles(); });
+  showStickerPopups();
 }
 
 // ---------- who's playing? ----------
@@ -480,6 +481,10 @@ function screenParent(sel = PROFILES[0].id) {
           <div class="tricky-list">${chips(tf, factLabel)}</div>
         </div>
       </div>
+      <div class="card parent-card wide parent-stickers">
+        <h3>⭐ Stickers <small>${stickerCount(s)} of ${STICKERS.length}</small></h3>
+        <div class="parent-sticker-row">${STICKERS.map((st) => `<div class="ps${earnedStickers(s)[st.id] ? ' got' : ''}" title="${st.name}: ${st.goal}">${stickerSVG(st, !!earnedStickers(s)[st.id])}</div>`).join('')}</div>
+      </div>
       <p class="muted parent-note">Tricky items come back more often in stops, tournaments and math problems until they're answered right ${MASTERED_STREAK} times in a row.</p>`}
     </div>`);
   $('.parent-tabs').addEventListener('click', (e) => { const t = e.target.closest('.parent-tab'); if (t) { Sound.tap(); screenParent(t.dataset.id); } });
@@ -522,6 +527,7 @@ function screenHome() {
       <header class="home-top">
         <div class="home-left"><button class="home-btn" data-go="menu" aria-label="Menu">🏠</button><h1 class="logo small">Poke<span>Math</span></h1></div>
         <div class="top-buttons">
+          <button class="btn dex-btn sticker-btn" id="stickers">⭐ Stickers <b>${stickerCount()}/${STICKERS.length}</b></button>
           <button class="btn dex-btn" data-go="dex">📖 My Pokémon <b>${caughtCount()}</b></button>
           <button class="btn level-btn lv-${mathLevel()}" id="level">🎯 Level ${mathLevel()}</button>
           <button class="btn gear-btn" id="settings" aria-label="Settings">⚙️</button>
@@ -549,6 +555,8 @@ function screenHome() {
   $('#settings').addEventListener('click', openSettings);
   $('#level').addEventListener('click', openLevels);
   $('#switch')?.addEventListener('click', () => { Sound.tap(); screenDex(true); });
+  $('#stickers').addEventListener('click', () => { Sound.tap(); screenStickers('home'); });
+  showStickerPopups();
 }
 
 // Make a caught Pokémon the one used for Train / Catch / Battle
@@ -652,6 +660,7 @@ function screenTrain() {
     {
       const learned = next;
       me.rank++;
+      bumpCounter('trainings');
       me.rounds = 0;
       persist();
       Sound.levelUp();
@@ -1020,6 +1029,7 @@ async function runBattle(cfg) {
     confetti();
     allySprite.classList.add('jump');
     if (cfg.onWin) return cfg.onWin(panel, pm);
+    bumpCounter('battlesWon');
     panel.innerHTML = `
       <div class="center-msg">
         <div class="big-emoji">🏆</div>
