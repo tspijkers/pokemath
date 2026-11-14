@@ -462,7 +462,7 @@ function screenParent(sel = PROFILES[0].id) {
         <div class="card parent-card">
           <h3>Progress</h3>
           <div class="stat-row"><span>Partner</span><b>${DEX[s.partner.id].name}</b></div>
-          <div class="stat-row"><span>Pokémon caught</span><b>${Object.keys(s.caught).length} / ${DEX_COUNT}</b></div>
+          <div class="stat-row"><span>Pokémon caught</span><b>${Object.keys(s.caught).length} / ${DEX_IDS.length}</b></div>
           <div class="stat-row"><span>PokeMath level</span><b>Level ${s.mathLevel || 1}</b></div>
           <div class="stat-row"><span>Reading badges</span><b>${s.reading ? s.reading.badges.filter(Boolean).length : 0} / ${JOURNEYS.length}</b></div>
           <div class="stat-row"><span>Tournaments won</span><b>${tWon} / ${TOURNAMENTS.length}</b></div>
@@ -1095,16 +1095,16 @@ function screenBattle() {
 function screenDex(picking = false, back = 'home') {
   show(`
     <div class="screen dex${picking ? ' picking' : ''}">
-      ${topbar(picking ? 'Who do you want to use?' : `My Pokémon — ${caughtCount()} of ${DEX_COUNT}`, back)}
-      <div class="dex-progress"><div style="width:${(caughtCount() / DEX_COUNT) * 100}%"></div></div>
+      ${topbar(picking ? 'Who do you want to use?' : `My Pokémon — ${caughtCount()} of ${DEX_IDS.length}`, back)}
+      <div class="dex-progress"><div style="width:${(caughtCount() / DEX_IDS.length) * 100}%"></div></div>
       <div class="dex-tabs">
         <button class="dex-tab" data-lv="0">All</button>
         ${[1, 2, 3, 4].map((lv) => `<button class="dex-tab lv-${lv}" data-lv="${lv}">Level ${lv} <small>${caughtInLevel(lv)}/${LEVEL_POKEMON[lv].length}</small></button>`).join('')}
         <button class="dex-tab lv-5" data-lv="5">✨ Legendary Pokémon <small>${caughtInLevel(5)}/${LEVEL_POKEMON[5].length}</small></button>
       </div>
       <div class="dex-grid">
-        ${Array.from({ length: DEX_COUNT }, (_, k) => {
-          const m = DEX[k + 1], n = save.caught[m.id];
+        ${DEX_IDS.map((id) => {
+          const m = DEX[id], n = save.caught[m.id];
           return `<button class="dex-cell ${n ? 'have' : 'missing'}" data-id="${m.id}" data-lv="${LEVEL_OF[m.id]}" ${n ? '' : 'disabled'}>
             <span class="dex-lv lv-${LEVEL_OF[m.id]}">${LEVEL_OF[m.id] === LEGENDARY_GROUP ? '✨' : LEVEL_OF[m.id]}</span>
             <span class="dex-no">#${String(m.id).padStart(3, '0')}</span>
