@@ -796,6 +796,14 @@ async function runBattle(cfg) {
   };
   const drawAlly = () => { $('.ally-hp').innerHTML = hpBox(pm.name, allyRank, ally.hp, ally.maxHp, false); };
   const setFoeSprite = () => { foeSprite.innerHTML = monSVG(foe().mon); foeSprite.className = 'sprite foe-sprite enter-right'; };
+  // Who you're battling stays visible in the corner of the field (trainer battles only).
+  const drawTrainerTag = () => {
+    if (isWild) return;
+    let tag = $('.trainer-tag');
+    if (!tag) { tag = document.createElement('div'); tag.className = 'trainer-tag'; $('.arena').appendChild(tag); }
+    tag.innerHTML = `<div class="sprite tag-face">${trainerSVG(cfg.trainer)}</div>
+      <div class="tag-text"><b>${cfg.trainer}</b><span>${foes.map((f, i) => `<i class="tag-ball${i < fi ? ' out' : ''}"></i>`).join('')}</span></div>`;
+  };
 
   allySprite.innerHTML = monSVG(pm);
   allySprite.className = 'sprite ally-sprite enter-left';
@@ -810,7 +818,7 @@ async function runBattle(cfg) {
     $('.foe-hp').innerHTML = `<div class="hp-name"><span>${cfg.trainer}</span></div><div class="hp-num">${'⚪'.repeat(foes.length)} ${foes.length} Pokémon</div>`;
     await say(panel, `<b>${cfg.trainer}</b> wants to battle!${TRAINER_STYLE[cfg.trainer] === 'dog' ? ' Woof! 🐾' : ''}`, 1800);
     if (!alive(tok)) return;
-    setFoeSprite(); drawFoe();
+    setFoeSprite(); drawFoe(); drawTrainerTag();
     await say(panel, `${cfg.trainer.split(' ').pop()} sends out <b>${foe().mon.name}</b>!`);
   }
   if (!alive(tok)) return;
@@ -863,7 +871,7 @@ async function runBattle(cfg) {
       if (!alive(tok)) return;
       if (fi < foes.length - 1) {
         fi++;
-        setFoeSprite(); drawFoe();
+        setFoeSprite(); drawFoe(); drawTrainerTag();
         await say(panel, `${cfg.trainer.split(' ').pop()} sends out <b>${foe().mon.name}</b>!`);
         if (!alive(tok)) return;
         continue;
