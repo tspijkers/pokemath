@@ -527,7 +527,7 @@ function ensureReading() {
   while (R.stops.length < n) R.stops.push(0);
   return save.reading;
 }
-const journeyUnlocked = (i) => i === 0 || save.reading.badges[i - 1];
+const journeyUnlocked = (i) => isTester() || i === 0 || save.reading.badges[i - 1];
 const currentJourney = () => { const r = ensureReading(); const i = r.badges.findIndex((b) => !b); return i < 0 ? JOURNEYS.length - 1 : i; };
 const badgeCount = () => (save && save.reading ? save.reading.badges.filter(Boolean).length : 0);
 let readingView = null;
@@ -569,8 +569,8 @@ function screenReading(r) {
   readingView = r;
   const J = JOURNEYS[r], done = save.reading.stops[r], badge = save.reading.badges[r];
   const state = (i) => {
-    if (i < 4) return i < done ? 'done' : i === done ? 'next' : 'locked';
-    return badge ? 'done' : done >= 4 ? 'next' : 'locked';
+    if (i < 4) return i < done ? 'done' : i === done || isTester() ? 'next' : 'locked';
+    return badge ? 'done' : done >= 4 || isTester() ? 'next' : 'locked';
   };
   const buddyAt = badge ? 4 : Math.min(done, 4);
   const tIdx = (r - 1) / 2, tourneyReady = badge && r % 2 === 1 && tourneyOpen(tIdx) && !tourneyState(tIdx).won;
@@ -605,7 +605,7 @@ function screenReading(r) {
             <span class="node-icon">${icon}</span><span class="node-label">${label}</span></button>`;
         }).join('')}
         <div class="map-buddy sprite bob" style="left:${pctX(J.nodes[buddyAt][0])}%;top:${J.nodes[buddyAt][1]}%">${heroSVG()}</div>
-        ${badge ? `<button class="sentence-btn${sentenceDone(r) ? ' done' : ''}" id="sentences">📜 Sentence bonus${sentenceDone(r) ? ' ✅' : ''}</button>` : ''}
+        ${badge || isTester() ? `<button class="sentence-btn${sentenceDone(r) ? ' done' : ''}" id="sentences">📜 Sentence bonus${sentenceDone(r) ? ' ✅' : ''}</button>` : ''}
       </div>
       ${badge && r === JOURNEYS.length - 1 && !tourneyReady ? `<div class="map-info card">${info}</div>` : `<button class="map-info card go" id="next-step">${info} <span class="go-arrow">▶</span></button>`}
     </div>`);
@@ -909,7 +909,7 @@ function tourneyState(t) {
   while (R.tournaments.length < TOURNAMENTS.length) R.tournaments.push({ round: 0, won: false });
   return R.tournaments[t];
 }
-const tourneyOpen = (t) => TOURNAMENTS[t].regions.every((r) => save.reading.badges[r]);
+const tourneyOpen = (t) => isTester() || TOURNAMENTS[t].regions.every((r) => save.reading.badges[r]);
 const tourneyOpponent = (t, round) => {
   const T = TOURNAMENTS[t];
   if (round < 2) { const J = JOURNEYS[T.regions[round]]; return { name: J.leader, team: TYPE_TEAMS[J.shape] || CHAMPION_TEAM, color: J.badgeColor }; }
@@ -923,7 +923,7 @@ function screenTournament(t) {
   const regionNames = T.regions.map((r) => JOURNEYS[r].name).join(' & ');
   const rows = ROUND_NAMES.map((rn, i) => {
     const o = tourneyOpponent(t, i);
-    const state = i < st.round ? 'done' : i === st.round ? 'next' : 'locked';
+    const state = i < st.round ? 'done' : i === st.round ? 'next' : isTester() ? 'open' : 'locked';
     return `<div class="bracket-row ${state}" style="--oc:${o.color}">
       <div class="bracket-avatar sprite">${trainerSVG(o.name)}</div>
       <div class="bracket-text"><small>${rn}</small><b>${o.name}</b></div>
@@ -949,6 +949,8 @@ function screenTournament(t) {
       </div>
     </div>`);
   $('#start-round').onclick = () => { Sound.tap(); pickFighter(t); };
+  // tester: tap any round to play it directly
+  if (isTester()) $$('.bracket-row').forEach((row, i) => row.addEventListener('click', () => { Sound.tap(); tourneyState(t).round = i; pickFighter(t); }));
 }
 
 // Choose one of your Pokémon for the next battle
