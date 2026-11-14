@@ -9,6 +9,11 @@ DEX_RAW.split(',').forEach((entry, i) => {
   DEX[i + 1] = { id: i + 1, name, types: types.split('/') };
 });
 const DEX_COUNT = 151;
+// Three original legendaries (not from the 151), won in PokeRead tournaments 4–6.
+DEX[152] = { id: 152, name: 'Tidalon', types: ['water'], original: true };
+DEX[153] = { id: 153, name: 'Magmor', types: ['ground', 'fire'], original: true };
+DEX[154] = { id: 154, name: 'Skyvern', types: ['dragon', 'flying'], original: true };
+const DEX_IDS = Object.keys(DEX).map(Number).sort((a, b) => a - b);
 
 const LEGENDARY = new Set([144, 145, 146, 150, 151]);
 // Fully evolved Pokémon show up a bit less often than first forms.
@@ -36,7 +41,7 @@ const LEVEL_POKEMON = {
   // 16: Mew, Mewtwo and the strongest final evolutions
   4: [151, 150, 3, 6, 9, 149, 130, 65, 94, 68, 76, 59, 143, 26, 34, 31],
   // Legendary Pokémon: only won in PokeRead tournaments (not catchable in PokeMath)
-  5: [145, 146, 144],
+  5: [145, 146, 144, 152, 153, 154],
 };
 const LEGENDARY_GROUP = 5;
 const LEVEL_OF = {};
@@ -47,6 +52,27 @@ const STARTERS = [7, 1, 4, 25];
 
 // One new move per level (index 0 = level 1)
 const PARTNER_MOVES = {
+  152: [
+    { name: 'Water Gun', type: 'water', power: 20 },
+    { name: 'Bubble Beam', type: 'water', power: 25 },
+    { name: 'Aqua Tail', type: 'water', power: 30 },
+    { name: 'Whirlpool', type: 'water', power: 35 },
+    { name: 'Tidal Wave', type: 'water', power: 45 },
+  ],
+  153: [
+    { name: 'Mud Slap', type: 'ground', power: 20 },
+    { name: 'Rock Tomb', type: 'rock', power: 25 },
+    { name: 'Lava Plume', type: 'fire', power: 30 },
+    { name: 'Earthquake', type: 'ground', power: 35 },
+    { name: 'Eruption', type: 'fire', power: 45 },
+  ],
+  154: [
+    { name: 'Twister', type: 'dragon', power: 20 },
+    { name: 'Air Slash', type: 'flying', power: 25 },
+    { name: 'Dragon Claw', type: 'dragon', power: 30 },
+    { name: 'Cloud Dive', type: 'flying', power: 35 },
+    { name: 'Sky Beam', type: 'dragon', power: 45 },
+  ],
   7: [
     { name: 'Tackle', type: 'normal', power: 20 },
     { name: 'Bubble', type: 'water', power: 25 },
