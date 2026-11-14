@@ -30,20 +30,20 @@ const MATH_LEVELS = {
 };
 const LEVEL_POKEMON = {
   // 55: first forms (incl. the four partners) + Ditto
-  1: [1, 4, 7, 25, 10, 13, 16, 19, 21, 23, 27, 29, 32, 35, 37, 39, 41, 43, 46, 48, 50, 52, 54, 56, 58, 60, 63, 66, 69, 72,
-    74, 77, 79, 81, 84, 86, 88, 90, 92, 96, 98, 100, 102, 104, 109, 111, 116, 118, 120, 129, 133, 138, 140, 147, 132],
+  1: [1, 4, 7, 25, 10, 13, 16, 19, 21, 23, 27, 29, 32, 41, 43, 46, 48, 50, 52, 56, 58, 60, 63, 66, 69, 72, 74, 77, 79, 81, 84, 86, 88, 90, 92, 96, 98, 100, 102, 104, 109, 111, 116, 118, 120, 129, 138, 140, 132],
   // 50: middle evolutions, one-of-a-kind Pokémon, easier final forms
-  2: [2, 5, 8, 11, 14, 17, 30, 33, 44, 61, 64, 67, 70, 75, 93, 148,
-    83, 95, 106, 107, 108, 113, 114, 115, 122, 123, 124, 125, 126, 127, 128, 131, 137, 142,
-    12, 15, 20, 22, 24, 28, 36, 40, 42, 47, 49, 51, 53, 57, 85, 119],
+  2: [2, 5, 8, 11, 14, 17, 30, 33, 44, 61, 64, 67, 70, 75, 93, 148, 83, 95, 106, 107, 108, 114, 115, 122, 124, 125, 126, 127, 128, 137, 142, 12, 15, 20, 22, 24, 28, 36, 40, 42, 47, 49, 51, 53, 57, 85, 119],
   // 30: tougher final forms + legendary birds
-  3: [18, 38, 45, 55, 62, 71, 73, 78, 80, 82, 87, 89, 91, 97, 99, 101, 103, 105, 110, 112, 117, 121, 134, 135, 136, 139, 141],
+  3: [18, 38, 45, 55, 62, 71, 73, 78, 80, 82, 87, 89, 91, 97, 99, 101, 103, 105, 110, 112, 117, 121, 136, 139, 141],
   // 16: Mew, Mewtwo and the strongest final evolutions
-  4: [151, 150, 3, 6, 9, 149, 130, 65, 94, 68, 76, 59, 143, 26, 34, 31],
+  4: [151, 150, 3, 6, 9, 149, 130, 65, 94, 68, 76, 59, 26, 34, 31],
   // Legendary Pokémon: only won in PokeRead tournaments (not catchable in PokeMath)
   5: [145, 146, 144, 152, 153, 154],
+  // PokeSpell: only hatched from eggs in the PokeSpell lab (egg 1 → 12, in this order)
+  6: [133, 37, 54, 35, 39, 147, 113, 131, 123, 134, 135, 143],
 };
 const LEGENDARY_GROUP = 5;
+const SPELL_GROUP = 6;
 const LEVEL_OF = {};
 for (const [lv, ids] of Object.entries(LEVEL_POKEMON)) ids.forEach((id) => (LEVEL_OF[id] = +lv));
 
@@ -136,7 +136,7 @@ function movesFor(id) {
   return (_moveCache[id] = list);
 }
 // Pokémon from higher Level groups are a bit stronger (HP and hit power).
-const GROUP_BONUS = { 1: 1, 2: 1.06, 3: 1.12, 4: 1.2, 5: 1.25 };
+const GROUP_BONUS = { 1: 1, 2: 1.06, 3: 1.12, 4: 1.2, 5: 1.25, 6: 1.1 };
 
 // Type matchups: attacking type → types it is strong / weak against.
 // Strong = +10% damage, weak = −10% (never more than that, even for two-type Pokémon).
