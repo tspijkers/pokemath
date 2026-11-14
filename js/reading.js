@@ -582,6 +582,7 @@ function screenReading(r) {
       <header class="topbar">
         <div class="home-left"><button class="home-btn" data-go="menu" aria-label="Menu">🏠</button><h1 class="logo small">Poke<span>Read</span></h1></div>
         <div style="flex:1"></div>
+        <button class="btn dex-btn sticker-btn" id="read-stickers">⭐ <b>${stickerCount()}/${STICKERS.length}</b></button>
         <button class="btn dex-btn" id="read-dex">📖 My Pokémon <b>${caughtCount()}</b></button>
         <div class="badge-row">${JOURNEYS.map((j, i) => `<span class="badge-slot${save.reading.badges[i] ? ' got' : ''}">${save.reading.badges[i] ? badgeSVG(j.shape, j.badgeColor) : ''}</span>`).join('')}</div>
       </header>
@@ -611,6 +612,8 @@ function screenReading(r) {
   $('#next-r').addEventListener('click', () => { Sound.tap(); screenReading(r + 1); });
   $('#all-regions').addEventListener('click', () => { Sound.tap(); openRegionPicker(r); });
   $('#read-dex').addEventListener('click', () => { Sound.tap(); screenDex(false, 'reading'); });
+  $('#read-stickers').addEventListener('click', () => { Sound.tap(); screenStickers('reading'); });
+  showStickerPopups();
   $('#next-step')?.addEventListener('click', () => {
     Sound.tap();
     if (tourneyReady) screenTournament(tIdx);
@@ -840,7 +843,7 @@ async function screenGym(r) {
   const bubble = $('.leader-bubble'), crew = $$('.gym-crew');
   const say = (t) => { bubble.textContent = t; retrigger(bubble, 'pop-in'); };
   say(pick(LEADER_START));
-  await wordQuiz(panel, J.words, wordsUpTo(r), `Gym challenge`, tok, (n) => {
+  const gymMistakes = await wordQuiz(panel, J.words, wordsUpTo(r), `Gym challenge`, tok, (n) => {
     meter.style.width = `${(n / J.words.length) * 100}%`;
     meterTxt.textContent = `${n} / ${J.words.length}`;
     if (n === Math.ceil(J.words.length / 2)) say('Halfway there! My team is getting nervous!');
@@ -849,6 +852,7 @@ async function screenGym(r) {
     else { say(pick(LEADER_OOPS)); crew.forEach((c) => retrigger(c, 'wiggle')); }
   });
   if (!alive(tok)) return;
+  if (gymMistakes === 0) bumpCounter('perfectGyms');
   say(`You did it! You earned the ${J.badge}!`);
   crew.forEach((c) => c.classList.add('jump'));
   const first = !save.reading.badges[r];
