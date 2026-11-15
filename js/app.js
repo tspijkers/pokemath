@@ -339,6 +339,7 @@ function screenChoose() {
     if (!yes) return;
     save = { partner: { id: m.id }, caught: { [m.id]: 1 }, team: { [m.id]: { rank: 1, rounds: 0 } }, active: m.id, mathLevel: save?.mathLevel || 1 };
     persist();
+    applyGrants();
     Sound.win();
     confetti();
     screenMenu();
@@ -408,7 +409,7 @@ function askPin(p, onOk = openProfile) {
   el.innerHTML = `
     <div class="modal pin-modal" style="--pc:${p.color}">
       <div class="profile-avatar small"><span>${p.name[0]}</span></div>
-      <h2>Hi ${p.name}!</h2>
+      <h2>${p.title || `Hi ${p.name}!`}</h2>
       <p>Type your secret code</p>
       <div class="pin-dots">${[0, 1, 2, 3].map(() => '<span></span>').join('')}</div>
       <div class="keypad pin-pad">
@@ -491,9 +492,53 @@ function screenParent(sel = PROFILES[0].id) {
         <div class="parent-sticker-row">${STICKERS.map((st) => `<div class="ps${earnedStickers(s)[st.id] ? ' got' : ''}" title="${st.name}: ${st.goal}">${stickerSVG(st, !!earnedStickers(s)[st.id])}</div>`).join('')}</div>
       </div>
       <p class="muted parent-note">Tricky items come back more often in stops, tournaments and math problems until they're answered right ${MASTERED_STREAK} times in a row.</p>`}
+      <div class="reset-all-row"><button class="btn red small" id="reset-all">🗑️ Reset ALL players</button></div>
     </div>`);
   $('.parent-tabs').addEventListener('click', (e) => { const t = e.target.closest('.parent-tab'); if (t) { Sound.tap(); screenParent(t.dataset.id); } });
+  $('#reset-all').addEventListener('click', () => { Sound.tap(); askPin(RESET_ALL, resetAllPlayers); });
   $('#parent-exit').addEventListener('click', () => { Sound.tap(); screenProfiles(); });
+}
+
+// Erase every player's game on this device (needs code 0812, then a confirmation).
+const RESET_ALL = { id: 'reset-all', name: 'Reset', title: 'Reset ALL players', pin: '0812', color: '#dc2626' };
+async function resetAllPlayers() {
+  const sure = await modal('<div class="big-emoji">⚠️</div><h2>Erase every game?</h2><p>All players start over: partners, Pokémon, ranks, badges, eggs, stickers and stats are erased on this device. This can\'t be undone.</p>',
+    [{ label: 'No, keep them', value: false, cls: 'green' }, { label: 'Yes, erase all', value: true, cls: 'red' }]);
+  if (!sure) return;
+  try {
+    Object.keys(localStorage).filter((k) => k.startsWith('pokemath-save')).forEach((k) => localStorage.removeItem(k));
+  } catch (e) {}
+  screenProfiles();
+}
+
+// One-time gifts for a specific player, applied once per device the first time their game is opened.
+const GRANTS = [
+  {
+    key: 'pokemath-grant-evan-1', player: 'evan',
+    apply(s) {
+      const team = (s.team ||= {}), caught = (s.caught ||= {});
+      for (const id of LEVEL_POKEMON[1]) { caught[id] = 1; team[id] = { rank: 5, rounds: 0 }; }         // all Level 1 Pokémon at Rank 5
+      for (const id of LEVEL_POKEMON[LEGENDARY_GROUP].slice(0, 5)) { caught[id] = 1; team[id] = { rank: 5, rounds: 0 }; } // first 5 legendaries
+      const R = s.reading;
+      for (let r = 0; r < 8; r++) { R.badges[r] = true; R.stops[r] = Math.max(R.stops[r] || 0, 4); }  // first 8 gym badges
+      const sp = (s.spell ||= { egg: 0, stage: 0, hatched: Array(LEVEL_POKEMON[SPELL_GROUP].length).fill(false) });
+      LEVEL_POKEMON[SPELL_GROUP].slice(0, 3).forEach((id, k) => {                                  // first 3 eggs hatched
+        sp.hatched[k] = true; caught[id] = 1; if (!team[id]) team[id] = { rank: 1, rounds: 0 };
+      });
+      if (sp.egg < 3) { sp.egg = 3; sp.stage = 0; }
+    },
+  },
+];
+function applyGrants() {
+  if (!save || !profile) return;
+  for (const g of GRANTS) {
+    if (g.player !== profile.id) continue;
+    try { if (localStorage.getItem(g.key)) continue; } catch (e) { continue; }
+    ensureReading();
+    g.apply(save);
+    persist();
+    try { localStorage.setItem(g.key, '1'); } catch (e) {}
+  }
 }
 
 async function openProfile(p) {
@@ -515,6 +560,7 @@ async function openProfile(p) {
       save = loadSave();
     }
   }
+  applyGrants();
   Sound.levelUp();
   screenMenu();
 }
