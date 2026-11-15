@@ -1,6 +1,6 @@
 // Offline support: cache the whole app so it works without internet.
 // Bump VERSION whenever files change so the iPad picks up the update.
-const VERSION = 'pokemath-v37';
+const VERSION = 'pokemath-v38';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
   'js/data.js', 'js/art.js', 'js/mons.js', 'js/legends.js', 'js/app.js', 'js/reading.js', 'js/stickers.js', 'js/sentences.js', 'js/spell.js',
@@ -23,7 +23,7 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    fetch(e.request)
+    fetch(e.request, { cache: 'no-cache' })
       .then((res) => {
         const copy = res.clone();
         caches.open(VERSION).then((c) => c.put(e.request, copy));
