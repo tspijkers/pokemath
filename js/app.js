@@ -651,6 +651,14 @@ async function openSettings() {
   );
   if (choice === 'switch') { screenProfiles(); return; }
   if (choice !== 'reset') return;
+  // Resetting a game always needs the reset code (0812), so kids can't erase a game by accident.
+  const codeOk = await new Promise((resolve) => {
+    const before = document.querySelectorAll('.modal-back').length;
+    askPin({ ...RESET_ALL, title: 'Reset code' }, () => resolve(true));
+    // if the code pad is closed without the right code, stop here
+    const watch = setInterval(() => { if (document.querySelectorAll('.modal-back').length <= before) { clearInterval(watch); setTimeout(() => resolve(false), 300); } }, 250);
+  });
+  if (!codeOk) return;
   const sure = await modal(
     `<h2>Are you sure?</h2><p>Everything in ${profile.name}'s game will be erased, and ${profile.name} will choose a new partner.</p>`,
     [{ label: 'No, keep playing', value: false, cls: 'green' }, { label: 'Yes, reset', value: true, cls: 'red' }]
