@@ -699,3 +699,4 @@ h1, h2, p { margin: 0; }
 .tester-note { font-size: .95rem !important; color: #b45309 !important; }
 .bracket-row.open { cursor: pointer; border-style: dashed; }
 .nest.waiting { cursor: pointer; }
+.reset-all-row { display: flex; justify-content: center; padding: 10px 0 20px; }
