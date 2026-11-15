@@ -17,6 +17,9 @@ const PROFILES = [
   { id: 'user5', name: 'User 5', pin: '4000', color: '#ec4899' },
   { id: 'user6', name: 'User 6', pin: '5555', color: '#14b8a6' },
 ];
+// App version — shown in Settings; keep in step with VERSION in sw.js.
+const APP_VERSION = 38;
+
 // One-time reset of every player's game on this device. Raise RESET_ROUND to wipe all games again.
 const RESET_ROUND = '1';
 try {
@@ -132,6 +135,7 @@ function speak(text, rate = 0.85) {
 let screenToken = 0;
 let cleanups = [];
 function show(html) {
+  if (window.__updateReady) { window.__updateReady = false; location.reload(); return screenToken; }
   cleanups.forEach((f) => f()); cleanups = [];
   try { speechSynthesis.cancel(); } catch (e) {}
   screenToken++;
@@ -646,6 +650,7 @@ async function openSettings() {
   const choice = await modal(
     `<div class="big-emoji">⚙️</div><h2>Settings</h2>
      <p>Playing as <b>${profile.name}</b>.</p>
+     <p class="muted app-version">App version ${APP_VERSION}</p>
      <p>Reset starts <b>${profile.name}'s</b> game over: a new partner, and all ranks, caught Pokémon and reading badges are erased. Other players are not affected.</p>`,
     [{ label: 'Close', value: 'close', cls: 'grey' }, { label: '👤 Switch user', value: 'switch', cls: 'blue' }, { label: '🔄 Reset game', value: 'reset', cls: 'red' }]
   );
@@ -1208,5 +1213,16 @@ function screenDex(picking = false, back = 'home') {
 document.addEventListener('DOMContentLoaded', () => screenProfiles());
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+  navigator.serviceWorker.register('sw.js').then((reg) => {
+    // look for a newer version every time the app is opened or comes back from the background
+    const check = () => reg.update().catch(() => {});
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+    setInterval(check, 30 * 60 * 1000);
+  }).catch(() => {});
+  // a new version took over: reload at the next screen change, so nobody keeps playing an old version
+  let hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController) window.__updateReady = true;
+    hadController = true;
+  });
 }
