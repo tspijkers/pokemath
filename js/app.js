@@ -514,7 +514,7 @@ async function resetAllPlayers() {
 // One-time gifts for a specific player, applied once per device the first time their game is opened.
 const GRANTS = [
   {
-    key: 'pokemath-grant-evan-1', player: 'evan',
+    key: 'evan-boost-1', player: 'evan',
     apply(s) {
       const team = (s.team ||= {}), caught = (s.caught ||= {});
       for (const id of LEVEL_POKEMON[1]) { caught[id] = 1; team[id] = { rank: 5, rounds: 0 }; }         // all Level 1 Pokémon at Rank 5
@@ -529,15 +529,17 @@ const GRANTS = [
     },
   },
 ];
+// Gifts are remembered inside the player's own game, so a game that was reset (or newly started)
+// still gets them once, and the same game never gets them twice.
 function applyGrants() {
   if (!save || !profile) return;
+  save.grants ||= {};
   for (const g of GRANTS) {
-    if (g.player !== profile.id) continue;
-    try { if (localStorage.getItem(g.key)) continue; } catch (e) { continue; }
+    if (g.player !== profile.id || save.grants[g.key]) continue;
     ensureReading();
     g.apply(save);
+    save.grants[g.key] = todayKey();
     persist();
-    try { localStorage.setItem(g.key, '1'); } catch (e) {}
   }
 }
 
