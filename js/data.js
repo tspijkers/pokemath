@@ -26,7 +26,8 @@ const MATH_LEVELS = {
   1: { addSub: 10, mul: 0, label: '+ and − with numbers 1 to 10' },
   2: { addSub: 20, mul: 0, label: '+ and − with numbers 1 to 20' },
   3: { addSub: 0, mul: 5, label: '× with numbers 1 to 5' },
-  4: { addSub: 0, mul: 10, label: '× with numbers 1 to 10' },
+  // Level 4: whole times tables (1–5), each table ×1 to ×10 shown at once and answered in order
+  4: { addSub: 0, mul: 0, tables: [1, 2, 3, 4, 5], label: 'Times tables 1 to 5 (whole tables)' },
 };
 const LEVEL_POKEMON = {
   // 55: first forms (incl. the four partners) + Ditto
