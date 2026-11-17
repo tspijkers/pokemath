@@ -18,7 +18,7 @@ const PROFILES = [
   { id: 'user6', name: 'User 6', pin: '5555', color: '#14b8a6' },
 ];
 // App version — shown in Settings; keep in step with VERSION in sw.js.
-const APP_VERSION = 38;
+const APP_VERSION = 39;
 
 // One-time reset of every player's game on this device. Raise RESET_ROUND to wipe all games again.
 const RESET_ROUND = '1';
@@ -200,6 +200,7 @@ function makeProblem() {
   const ops = [];
   if (cfg.addSub) ops.push('+', '-');
   if (cfg.mul) ops.push('x');
+  if (!ops.length) ops.push('x'), (cfg.mul = cfg.mul || 5);
   let p;
   // About 1 in 3 problems is a tricky fact this player missed before (if it fits the current level).
   const okFact = (a, op, b) => ops.includes(op) && (op === 'x' ? a <= cfg.mul && b <= cfg.mul : a <= cfg.addSub && b <= cfg.addSub && (op === '+' || b < a));
@@ -228,11 +229,96 @@ function makeProblem() {
   return p;
 }
 
+// Whole times tables: "The table of 4" with all 10 rows (4 × 1 … 4 × 10) on screen, answered in order.
+// A row answered wrong is retried until right, then comes back at the end of the table (🔁) and only
+// counts once it's answered right the first time. Resolves with the number of wrong tries.
+function solveTables(host, { tables = 1, title = '', pool = [1, 2, 3, 4, 5] } = {}) {
+  return new Promise((resolve) => {
+    const order = shuffle(pool).slice(0, tables);
+    let ti = 0, mistakes = 0, input = '', busy = false;
+    let n, queue, state, k, missedThis;
+    const startTable = () => {
+      n = order[ti]; queue = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; state = {}; missedThis = false; input = '';
+      k = queue.shift();
+      host.innerHTML = `
+        <div class="quiz table-quiz">
+          <div class="quiz-head">
+            <div class="quiz-title">${title}${tables > 1 ? ` · table ${ti + 1} of ${tables}` : ''}</div>
+            <button class="speak" aria-label="Read it to me">🔊</button>
+          </div>
+          <div class="tt-title">The table of <b>${n}</b></div>
+          <div class="times-table">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((m) => `<div class="tt-row" data-m="${m}"><span class="tt-q">${n} × ${m} =</span><span class="tt-a"></span></div>`).join('')}</div>
+          <div class="feedback">&nbsp;</div>
+          <div class="keypad">
+            ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => `<button data-k="${d}">${d}</button>`).join('')}
+            <button data-k="del" class="k-del" aria-label="Erase">⌫</button>
+            <button data-k="0">0</button>
+            <button data-k="ok" class="k-ok" aria-label="Check">✓</button>
+          </div>
+        </div>`;
+      $('.keypad', host).addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) press(b.dataset.k); });
+      $('.speak', host).addEventListener('click', () => speak(`${n} times ${k}`));
+      render();
+    };
+    const render = () => {
+      $$('.tt-row', host).forEach((row) => {
+        const m = +row.dataset.m, st = state[m];
+        row.className = 'tt-row' + (m === k ? ' current' : '') + (st === 'done' ? ' done' : '') + (st === 'again' ? ' again' : '');
+        row.querySelector('.tt-a').textContent = m === k ? (input || '?') : st === 'done' ? n * m : st === 'again' ? '🔁' : '';
+      });
+    };
+    const fb = (t, cls) => { const f = $('.feedback', host); f.textContent = t; f.className = `feedback ${cls}`; };
+    const check = () => {
+      if (+input === n * k) {
+        busy = true;
+        Sound.correct();
+        recordItem('facts', `${n}x${k}`, !missedThis);
+        if (missedThis) { state[k] = 'again'; queue.push(k); fb('Right! It will come back once more 🔁', 'good'); }
+        else { state[k] = 'done'; fb(pick(PRAISE), 'good'); }
+        setTimeout(() => {
+          busy = false; input = ''; missedThis = false;
+          if (queue.length) { k = queue.shift(); render(); return; }
+          // table finished
+          ti++;
+          if (ti < tables) { Sound.levelUp(); startTable(); fb(`Great! Now the table of ${order[ti]}!`, 'good'); return; }
+          cleanup(); resolve(mistakes);
+        }, 650);
+      } else {
+        mistakes++; missedThis = true;
+        Sound.wrong();
+        fb('Not quite — try again!', 'bad');
+        const q = $('.table-quiz', host); q.classList.remove('shake'); void q.offsetWidth; q.classList.add('shake');
+        input = ''; render();
+      }
+    };
+    const press = (key) => {
+      if (busy) return;
+      if (key === 'del') input = input.slice(0, -1);
+      else if (key === 'ok') { if (input) check(); return; }
+      else if (input.length < 3) input += key;
+      Sound.tap();
+      render();
+    };
+    const onKey = (e) => {
+      if (/^[0-9]$/.test(e.key)) press(e.key);
+      else if (e.key === 'Backspace') press('del');
+      else if (e.key === 'Enter') press('ok');
+    };
+    document.addEventListener('keydown', onKey);
+    const cleanup = () => document.removeEventListener('keydown', onKey);
+    cleanups.push(cleanup);
+    startTable();
+  });
+}
+
 // Shows problems in `host` until `count` were answered right on the FIRST try.
 // A missed problem is retried until right, then the exact same problem comes back
 // (one problem later) and only counts once it is answered right the first time.
 // Resolves with the number of wrong tries.
 function solveProblems(host, { count = 5, title = '' } = {}) {
+  // Level 4: whole times tables instead of single problems (1 table per attack, 2 for training)
+  const lvCfg = MATH_LEVELS[mathLevel()];
+  if (lvCfg.tables) return solveTables(host, { tables: count >= TRAIN_PROBLEMS ? 2 : 1, title, pool: lvCfg.tables });
   return new Promise((resolve) => {
     let i = 0, mistakes = 0, input = '', p = makeProblem(), busy = false, missedThis = false;
     const comeback = []; // missed problems that must be answered right first time
