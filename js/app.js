@@ -14,11 +14,11 @@ const PROFILES = [
   { id: 'evan', name: 'Evan', pin: '1000', color: '#22c55e' },
   { id: 'user3', name: 'Kurtzes', pin: '6143', color: '#f97316' },
   { id: 'user4', name: 'Zandr', pin: '0508', color: '#a855f7' },
-  { id: 'user5', name: 'Henryk', pin: '1222', color: '#ec4899' },
+  { id: 'user5', name: 'Henryk', pin: '0822', color: '#ec4899' },
   { id: 'user6', name: 'User 6', pin: '5555', color: '#14b8a6' },
 ];
 // App version — shown in Settings; keep in step with VERSION in sw.js.
-const APP_VERSION = 40;
+const APP_VERSION = 41;
 
 // One-time reset of every player's game on this device. Raise RESET_ROUND to wipe all games again.
 const RESET_ROUND = '1';
